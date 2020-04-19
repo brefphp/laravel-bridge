@@ -12,6 +12,6 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 return $app->makeWith(LaravelSqsHandler::class, [
-    'connection' => '',
-    'queue' => '',
+    'connection' => 'sqs',
+    'queue' => 'my-queue',
 ]);
