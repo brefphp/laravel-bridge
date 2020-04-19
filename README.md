@@ -1,5 +1,7 @@
 Bridge to use Laravel on AWS Lambda with Bref.
 
+**This package is currently experimental.**
+
 **These instructions apply to Laravel 7.**
 
 ## Installation
