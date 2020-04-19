@@ -14,6 +14,6 @@ class FunctionalTest extends TestCase
         $handler = new Process(['php', 'test-trigger.php']);
         $handler->setWorkingDirectory(__DIR__);
         $handler->mustRun();
-        $this->assertEquals('Processing podcast 12345', $handler->getOutput());
+        $this->assertEquals("Before job\nProcessing podcast 12345\nAfter job\n", $handler->getOutput());
     }
 }

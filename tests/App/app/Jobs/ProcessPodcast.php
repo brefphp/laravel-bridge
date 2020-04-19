@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use Bref\Test\LaravelBridge\App\app\Jobs\Middleware\JobMiddleware;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,6 +23,13 @@ class ProcessPodcast implements ShouldQueue
 
     public function handle(): void
     {
-        echo "Processing podcast {$this->podcastId}";
+        echo "Processing podcast {$this->podcastId}\n";
+    }
+
+    public function middleware(): array
+    {
+        return [
+            new JobMiddleware,
+        ];
     }
 }
