@@ -3,12 +3,9 @@
          bootstrap="./vendor/autoload.php">
 
     <testsuites>
-        <testsuite name="small">
+        <testsuite name="Test suite">
             <directory>./tests/</directory>
-            <exclude>./tests/Sam</exclude>
-        </testsuite>
-        <testsuite name="runtimes">
-            <directory>./tests/Sam</directory>
+            <exclude>./tests/App</exclude>
         </testsuite>
     </testsuites>
 

@@ -1,0 +1,32 @@
+on: [pull_request]
+name: Static analysis
+
+jobs:
+    phpstan:
+        name: PHPStan
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: PHPStan
+              uses: docker://oskarstark/phpstan-ga
+              env:
+                  REQUIRE_DEV: true
+              with:
+                  args: analyze --no-progress
+
+    phpcs:
+        name: PHPCS
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Download dependencies
+              run: composer update --no-interaction --prefer-dist  --no-progress --no-suggest --dev
+
+            - name: PHPCS check
+              uses: chekalsky/phpcs-action@v1
+              with:
+                  phpcs_bin_path: './vendor/bin/phpcs'
