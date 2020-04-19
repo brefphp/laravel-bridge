@@ -25,7 +25,7 @@ jobs:
               run: composer update --no-interaction --prefer-dist --optimize-autoloader --prefer-stable
 
             - name: Download dependencies for tests
-              run: cd tests/App && composer install --no-interaction --prefer-dist --optimize-autoloader --prefer-stable
+              run: cd tests/App && composer install --no-interaction --prefer-dist --optimize-autoloader
 
             - name: Run tests
               env:
