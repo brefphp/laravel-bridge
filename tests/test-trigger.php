@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
 use Bref\Context\Context;
-use Bref\LaravelBridge\SqsLaravelQueueHandler;
+use Bref\LaravelBridge\Queue\LaravelSqsHandler;
 
-/** @var SqsLaravelQueueHandler $handler */
+/** @var \Bref\LaravelBridge\Queue\LaravelSqsHandler $handler */
 $handler = require __DIR__ . '/App/handler.php';
 
 $event = json_decode(file_get_contents(__DIR__ . '/Fixture/sqs-event.json'), true, 512, JSON_THROW_ON_ERROR);

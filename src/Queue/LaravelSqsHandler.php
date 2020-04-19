@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Bref\LaravelBridge;
+namespace Bref\LaravelBridge\Queue;
 
 use Aws\Sqs\SqsClient;
 use Bref\Context\Context;
@@ -8,15 +8,18 @@ use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Jobs\SqsJob;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\SqsQueue;
 use Throwable;
 
-class SqsLaravelQueueHandler extends SqsHandler
+/**
+ * SQS handler for AWS Lambda that integrates with Laravel Queue.
+ */
+class LaravelSqsHandler extends SqsHandler
 {
     /** @var Container */
     private $container;
@@ -55,7 +58,7 @@ class SqsLaravelQueueHandler extends SqsHandler
                 'Body' => $recordData['body'],
             ];
 
-            $job = new \Illuminate\Queue\Jobs\SqsJob(
+            $job = new SqsJob(
                 $this->container,
                 $this->sqs,
                 $jobData,
@@ -70,7 +73,7 @@ class SqsLaravelQueueHandler extends SqsHandler
     /**
      * @see \Illuminate\Queue\Worker::process()
      */
-    private function process($connectionName, \Illuminate\Queue\Jobs\SqsJob $job): void
+    private function process($connectionName, SqsJob $job): void
     {
         try {
             // First we will raise the before job event and determine if the job has already ran
@@ -95,7 +98,7 @@ class SqsLaravelQueueHandler extends SqsHandler
     /**
      * @see \Illuminate\Queue\Worker::raiseBeforeJobEvent()
      */
-    private function raiseBeforeJobEvent(string $connectionName, \Illuminate\Queue\Jobs\SqsJob $job): void
+    private function raiseBeforeJobEvent(string $connectionName, SqsJob $job): void
     {
         $this->events->dispatch(new JobProcessing(
             $connectionName, $job
@@ -105,7 +108,7 @@ class SqsLaravelQueueHandler extends SqsHandler
     /**
      * @see \Illuminate\Queue\Worker::raiseAfterJobEvent()
      */
-    private function raiseAfterJobEvent(string $connectionName, \Illuminate\Queue\Jobs\SqsJob $job): void
+    private function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
     {
         $this->events->dispatch(new JobProcessed(
             $connectionName, $job
@@ -115,7 +118,7 @@ class SqsLaravelQueueHandler extends SqsHandler
     /**
      * @see \Illuminate\Queue\Worker::raiseExceptionOccurredJobEvent()
      */
-    private function raiseExceptionOccurredJobEvent(string $connectionName, \Illuminate\Queue\Jobs\SqsJob $job, Throwable $e): void
+    private function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
     {
         $this->events->dispatch(new JobExceptionOccurred(
             $connectionName, $job, $e
