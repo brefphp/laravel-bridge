@@ -22,14 +22,14 @@ jobs:
               uses: actions/checkout@v2
 
             - name: Download dependencies
-              env:
-                  SYMFONY_REQUIRE: ${{ matrix.sf_version }}
               run: composer update --no-interaction --prefer-dist --optimize-autoloader --prefer-stable
+
+            - name: Download dependencies for tests
+              run: cd tests/App && composer update --no-interaction --prefer-dist --optimize-autoloader --prefer-stable
 
             - name: Run tests
               env:
                   PHP_VERSION: ${{ matrix.php }}
-                  SYMFONY_REQUIRE: ${{ matrix.sf_version }}
               run: ./vendor/bin/phpunit
 
     lowest:
@@ -47,6 +47,9 @@ jobs:
 
             - name: Download dependencies
               run: composer update --no-interaction --prefer-dist --optimize-autoloader --prefer-stable --prefer-lowest
+
+            - name: Download dependencies for tests
+              run: cd tests/App && composer update --no-interaction --prefer-dist --optimize-autoloader --prefer-stable
 
             - name: Run tests
               env:
