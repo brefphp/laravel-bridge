@@ -111,3 +111,9 @@ functions:
 ```
 
 That's it! Anytime a job is pushed to the `my_sqs_queue`, SQS will invoke `handler.php` and our job will be executed.
+
+### Differences and limitations
+
+The SQS + Lambda integration already has a retry mechanism (with a dead letter queue). This is why those mechanisms from Laravel are not used at all. These should instead be configured on SQS (by default, jobs are retried in a loop for several days).
+
+For those familiar with Lambda, you may know that batch processing implies that any failed job will mark all the other jobs of the batch as "failed". However, Laravel manually marks successful jobs as "completed" (i.e. those are properly deleted from SQS).
