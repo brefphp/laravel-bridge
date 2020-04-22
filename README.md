@@ -10,6 +10,17 @@ Bridge to use Laravel on AWS Lambda with Bref.
 composer require bref/laravel-bridge
 ```
 
+**Warning:** The package is not published yet, you may have to add the repository manually:
+
+```json
+    "repositories": [
+        {
+            "type": "vcs",
+          "url": "git@github.com:brefphp/laravel-bridge.git"
+        }
+    ],
+```
+
 ## Laravel Queues with SQS
 
 This package lets you process jobs from SQS queues by integrating with Laravel Queues and its job system.
