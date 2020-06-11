@@ -26,7 +26,7 @@ class BrefServiceProvider extends ServiceProvider
         $isRunningInLambda = isset($_SERVER['LAMBDA_TASK_ROOT']);
 
         // Laravel Mix URL for assets stored on S3
-        $mixAssetUrl = $_SERVER['MIX_ASSET_URL'];
+        $mixAssetUrl = $_SERVER['MIX_ASSET_URL'] ?? null;
         if ($mixAssetUrl) {
             Config::set('app.mix_url', $mixAssetUrl);
         }
