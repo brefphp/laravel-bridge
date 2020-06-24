@@ -48,7 +48,8 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('view.compiled', '/tmp/storage/framework/views');
 
         // Allow all proxies because AWS Lambda runs behind API Gateway
-        Config::set('trustedproxy.proxies', '*');
+        // See https://github.com/fideloper/TrustedProxy/issues/115#issuecomment-503596621
+        Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
 
         // Sessions cannot be stored to files, so we use cookies by default instead
         $sessionDriver = Config::get('session.driver');
