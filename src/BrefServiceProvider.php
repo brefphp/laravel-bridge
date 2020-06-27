@@ -19,6 +19,10 @@ class BrefServiceProvider extends ServiceProvider
                 throw new RuntimeException(sprintf('Directory "%s" cannot be created', $compiledViewDirectory));
             }
         }
+
+        $this->publishes([
+            __DIR__.'/../config/serverless.yml' => base_path('serverless.yml')
+        ], 'config');
     }
 
     public function register(): void

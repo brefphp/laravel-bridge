@@ -12,6 +12,12 @@ composer require bref/laravel-bridge
 
 The `Bref\LaravelBridge\BrefServiceProvider` service provider will be registered automatically.
 
+You can now create a default `serverless.yml` at the root of your project by running:
+
+```bash
+php artisan vendor:publish --tag=config
+```
+
 ## Laravel Queues with SQS
 
 **These instructions apply to Laravel 7.**
