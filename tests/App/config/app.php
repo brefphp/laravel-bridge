@@ -165,6 +165,7 @@ return [
         /*
          * Package Service Providers...
          */
+        Bref\LaravelBridge\BrefServiceProvider::class,
 
         /*
          * Application Service Providers...

@@ -10,6 +10,8 @@ In any case, it is recommended to [first learn about serverless, AWS Lambda and 
 composer require bref/laravel-bridge
 ```
 
+The `Bref\LaravelBridge\BrefServiceProvider` service provider will be registered automatically.
+
 ## Laravel Queues with SQS
 
 **These instructions apply to Laravel 7.**
