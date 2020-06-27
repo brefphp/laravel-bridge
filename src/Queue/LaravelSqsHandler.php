@@ -73,7 +73,7 @@ class LaravelSqsHandler extends SqsHandler
     /**
      * @see \Illuminate\Queue\Worker::process()
      */
-    private function process($connectionName, SqsJob $job): void
+    private function process(string $connectionName, SqsJob $job): void
     {
         try {
             // First we will raise the before job event and determine if the job has already ran
@@ -101,7 +101,8 @@ class LaravelSqsHandler extends SqsHandler
     private function raiseBeforeJobEvent(string $connectionName, SqsJob $job): void
     {
         $this->events->dispatch(new JobProcessing(
-            $connectionName, $job
+            $connectionName,
+            $job
         ));
     }
 
@@ -111,7 +112,8 @@ class LaravelSqsHandler extends SqsHandler
     private function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
     {
         $this->events->dispatch(new JobProcessed(
-            $connectionName, $job
+            $connectionName,
+            $job
         ));
     }
 
@@ -121,7 +123,9 @@ class LaravelSqsHandler extends SqsHandler
     private function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
     {
         $this->events->dispatch(new JobExceptionOccurred(
-            $connectionName, $job, $e
+            $connectionName,
+            $job,
+            $e
         ));
     }
 }

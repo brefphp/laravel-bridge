@@ -21,7 +21,7 @@ class BrefServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/../config/serverless.yml' => base_path('serverless.yml')
+            __DIR__ . '/../config/serverless.yml' => base_path('serverless.yml'),
         ], 'config');
     }
 
