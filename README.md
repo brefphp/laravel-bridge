@@ -1,6 +1,11 @@
 Package to use Laravel on AWS Lambda with [Bref](https://bref.sh/).
 
-**This package is only necessary to use Laravel Queues with SQS.** For anything else, like websites or APIs, read the [Bref documentation for Laravel](https://bref.sh/docs/frameworks/laravel.html).
+This package provides the following benefits:
+
+- it configures Laravel for AWS Lambda (for websites, APIs or workers)
+- it provides a bridge to run Laravel Queues worker on AWS Lambda
+
+You can read the [Bref documentation for Laravel](https://bref.sh/docs/frameworks/laravel.html) for more documentation.
 
 In any case, it is recommended to [first learn about serverless, AWS Lambda and Bref](https://bref.sh/docs/) before using this package.
 
@@ -18,9 +23,13 @@ You can now create a default `serverless.yml` at the root of your project by run
 php artisan vendor:publish --tag=serverless-config
 ```
 
-## Laravel Queues with SQS
+The application is now ready to be deployed:
 
-**These instructions apply to Laravel 7.**
+```bash
+serverless deploy
+```
+
+## Laravel Queues with SQS
 
 This package lets you process jobs from SQS queues on AWS Lambda by integrating with Laravel Queues and its job system. A deployable example is available in the [bref-laravel-sqs-demo](https://github.com/mnapoli/bref-laravel-sqs-demo) repository.
 
