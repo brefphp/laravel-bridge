@@ -22,7 +22,7 @@ class BrefServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__ . '/../config/serverless.yml' => $this->app->basePath('serverless.yml'),
-        ], 'config');
+        ], 'serverless-config');
     }
 
     public function register(): void

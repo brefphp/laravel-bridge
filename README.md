@@ -15,7 +15,7 @@ The `Bref\LaravelBridge\BrefServiceProvider` service provider will be registered
 You can now create a default `serverless.yml` at the root of your project by running:
 
 ```bash
-php artisan vendor:publish --tag=config
+php artisan vendor:publish --tag=serverless-config
 ```
 
 ## Laravel Queues with SQS
