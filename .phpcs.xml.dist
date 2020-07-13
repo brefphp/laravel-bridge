@@ -3,7 +3,6 @@
     <arg name="basepath" value="."/>
 
     <file>src</file>
-    <file>tests</file>
 
     <rule ref="HardMode"/>
 </ruleset>
