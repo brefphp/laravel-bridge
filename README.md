@@ -86,16 +86,14 @@ provider:
     ...
     environment:
         APP_ENV: production
-        SQS_QUEUE:
-            Ref: AlertQueue
+        SQS_QUEUE: !Ref AlertQueue
         # If you create the queue manually, the `SQS_QUEUE` variable can be defined like this:
         # SQS_QUEUE: https://sqs.us-east-1.amazonaws.com/your-account-id/my-queue
     iamRoleStatements:
         # Allows our code to interact with SQS
         -   Effect: Allow
             Action: [sqs:SendMessage, sqs:DeleteMessage]
-            Resource:
-                Fn::GetAtt: [ AlertQueue, Arn ]
+            Resource: !GetAtt AlertQueue.Arn
 
 functions:
 
@@ -108,8 +106,7 @@ functions:
         events:
             # Declares that our worker is triggered by jobs in SQS
             -   sqs:
-                    arn:
-                        Fn::GetAtt: [ AlertQueue, Arn ]
+                    arn: !GetAtt AlertQueue.Arn
                     # If you create the queue manually, the line above could be:
                     # arn: 'arn:aws:sqs:us-east-1:1234567890:my_sqs_queue'
                     # Only 1 item at a time to simplify error handling
@@ -125,8 +122,7 @@ resources:
                 RedrivePolicy:
                     maxReceiveCount: 3 # jobs will be retried up to 3 times
                     # Failed jobs (after the retries) will be moved to the other queue for storage
-                    deadLetterTargetArn:
-                        Fn::GetAtt: [ DeadLetterQueue, Arn ]
+                    deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
 
         # Failed jobs will go into that SQS queue to be stored, until a developer looks at these errors
         DeadLetterQueue:
