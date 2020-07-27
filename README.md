@@ -135,6 +135,8 @@ As you can see in the `provider.environment` key, we define the `SQS_QUEUE` envi
 
 If you want to create the SQS queue manually, you will need to set that variable either via `serverless.yml` or the `.env` file.
 
+**Watch out**: in the example above, we set the full SQS queue URL in the `SQS_QUEUE` variable. If you set only the queue name (which is also valid), you will need to set the `SQS_PREFIX` environment variable too.
+
 #### Laravel
 
 First, you need to configure [Laravel Queues](https://laravel.com/docs/7.x/queues) to use the SQS queue.
