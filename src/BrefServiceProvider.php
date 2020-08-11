@@ -60,5 +60,10 @@ class BrefServiceProvider extends ServiceProvider
         if ($sessionDriver === 'file') {
             Config::set('session.driver', 'cookie');
         }
+
+        // The native Laravel storage directory is read-only, we move the cache to /tmp
+        // to avoid errors. If you want to actively use the cache, it will be best to use
+        // the dynamodb driver instead.
+        Config::set('cache.stores.file.path', '/tmp/storage/framework/cache');
     }
 }
