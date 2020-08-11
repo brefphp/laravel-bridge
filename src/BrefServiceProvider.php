@@ -41,9 +41,8 @@ class BrefServiceProvider extends ServiceProvider
         }
 
         // We change Laravel's default log destination to stderr
-        // (if it hasn't been changed by the user)
         $logDriver = Config::get('logging.default');
-        if ($logDriver === 'stack' && ! isset($_SERVER['LOG_CHANNEL'])) {
+        if ($logDriver === 'stack') {
             Config::set('logging.default', 'stderr');
         }
 
