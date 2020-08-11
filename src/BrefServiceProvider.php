@@ -8,17 +8,21 @@ use RuntimeException;
 
 class BrefServiceProvider extends ServiceProvider
 {
-    public function boot(): void
+    private function ensureDirectoryExists(string $path): void
     {
-        // Make sure the directory for compiled views exist
-        $compiledViewDirectory = Config::get('view.compiled');
-        if (! is_dir($compiledViewDirectory)) {
-            // The directory doesn't exist: let's create it, else Laravel will not create it automatically
-            // and will fail with an error
-            if (! mkdir($compiledViewDirectory, 0755, true) && ! is_dir($compiledViewDirectory)) {
-                throw new RuntimeException(sprintf('Directory "%s" cannot be created', $compiledViewDirectory));
+        if (! is_dir($path)) {
+            if (! mkdir($path, 0755, true) && ! is_dir($path)) {
+                throw new RuntimeException(sprintf('Directory "%s" cannot be created', $path));
             }
         }
+    }
+
+    public function boot(): void
+    {
+        // Laravel will not create those directories automatically and will fail with an error.
+        // So let's make sure the directories for compiled views and Real-Time Facades exist
+        $this->ensureDirectoryExists(Config::get('view.compiled'));
+        $this->ensureDirectoryExists('/tmp/storage/framework/cache');
 
         $this->publishes([
             __DIR__ . '/../config/serverless.yml' => $this->app->basePath('serverless.yml'),
@@ -64,5 +68,9 @@ class BrefServiceProvider extends ServiceProvider
         // to avoid errors. If you want to actively use the cache, it will be best to use
         // the dynamodb driver instead.
         Config::set('cache.stores.file.path', '/tmp/storage/framework/cache');
+
+        // This is the official solution for changing the cached Real-Time Facades path
+        // See: https://github.com/laravel/framework/issues/33839#issuecomment-673118699
+        $this->app->useStoragePath('/tmp/storage');
     }
 }
