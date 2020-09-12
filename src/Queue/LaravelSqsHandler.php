@@ -4,8 +4,8 @@ namespace Bref\LaravelBridge\Queue;
 
 use AsyncAws\Illuminate\Queue\AsyncAwsSqsQueue;
 use AsyncAws\Illuminate\Queue\Job\AsyncAwsSqsJob;
-use AsyncAws\Sqs\ValueObject\Message;
 use AsyncAws\Sqs\SqsClient;
+use AsyncAws\Sqs\ValueObject\Message;
 use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
@@ -14,9 +14,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Queue\Jobs\SqsJob;
 use Illuminate\Queue\QueueManager;
-use Illuminate\Queue\SqsQueue;
 use Throwable;
 
 /**
@@ -77,7 +75,6 @@ class LaravelSqsHandler extends SqsHandler
      * @param string $connectionName
      * @param AsyncAwsSqsJob $job
      * @throws Throwable
-     * @see \Illuminate\Queue\Worker::process()
      */
     private function process(string $connectionName, AsyncAwsSqsJob $job): void
     {
@@ -104,7 +101,6 @@ class LaravelSqsHandler extends SqsHandler
     /**
      * @param string $connectionName
      * @param AsyncAwsSqsJob $job
-     * @see \Illuminate\Queue\Worker::raiseBeforeJobEvent()
      */
     private function raiseBeforeJobEvent(string $connectionName, AsyncAwsSqsJob $job): void
     {
@@ -117,9 +113,8 @@ class LaravelSqsHandler extends SqsHandler
     /**
      * @param string $connectionName
      * @param AsyncAwsSqsJob $job
-     * @see \Illuminate\Queue\Worker::raiseAfterJobEvent()
      */
-    private function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
+    private function raiseAfterJobEvent(string $connectionName, AsyncAwsSqsJob $job): void
     {
         $this->events->dispatch(new JobProcessed(
             $connectionName,
@@ -131,7 +126,6 @@ class LaravelSqsHandler extends SqsHandler
      * @param string $connectionName
      * @param AsyncAwsSqsJob $job
      * @param Throwable $e
-     * @see \Illuminate\Queue\Worker::raiseExceptionOccurredJobEvent()
      */
     private function raiseExceptionOccurredJobEvent(string $connectionName, AsyncAwsSqsJob $job, Throwable $e): void
     {
