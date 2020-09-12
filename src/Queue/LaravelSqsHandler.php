@@ -2,7 +2,10 @@
 
 namespace Bref\LaravelBridge\Queue;
 
-use Aws\Sqs\SqsClient;
+use AsyncAws\Illuminate\Queue\AsyncAwsSqsQueue;
+use AsyncAws\Illuminate\Queue\Job\AsyncAwsSqsJob;
+use AsyncAws\Sqs\ValueObject\Message;
+use AsyncAws\Sqs\SqsClient;
 use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
@@ -38,7 +41,7 @@ class LaravelSqsHandler extends SqsHandler
         /** @var QueueManager $queueManager */
         $queueManager = $container->get('queue');
         $queueConnector = $queueManager->connection($connection);
-        if (! $queueConnector instanceof SqsQueue) {
+        if (! $queueConnector instanceof AsyncAwsSqsQueue) {
             throw new \RuntimeException("The '$connection' connection is not a SQS connection in the Laravel config");
         }
         $this->sqs = $queueConnector->getSqs();
@@ -58,10 +61,10 @@ class LaravelSqsHandler extends SqsHandler
                 'Body' => $recordData['body'],
             ];
 
-            $job = new SqsJob(
+            $job = new AsyncAwsSqsJob(
                 $this->container,
                 $this->sqs,
-                $jobData,
+                new Message($jobData),
                 $this->connectionName,
                 $this->queue,
             );
@@ -71,9 +74,12 @@ class LaravelSqsHandler extends SqsHandler
     }
 
     /**
+     * @param string $connectionName
+     * @param AsyncAwsSqsJob $job
+     * @throws Throwable
      * @see \Illuminate\Queue\Worker::process()
      */
-    private function process(string $connectionName, SqsJob $job): void
+    private function process(string $connectionName, AsyncAwsSqsJob $job): void
     {
         try {
             // First we will raise the before job event and determine if the job has already ran
@@ -96,9 +102,11 @@ class LaravelSqsHandler extends SqsHandler
     }
 
     /**
+     * @param string $connectionName
+     * @param AsyncAwsSqsJob $job
      * @see \Illuminate\Queue\Worker::raiseBeforeJobEvent()
      */
-    private function raiseBeforeJobEvent(string $connectionName, SqsJob $job): void
+    private function raiseBeforeJobEvent(string $connectionName, AsyncAwsSqsJob $job): void
     {
         $this->events->dispatch(new JobProcessing(
             $connectionName,
@@ -107,6 +115,8 @@ class LaravelSqsHandler extends SqsHandler
     }
 
     /**
+     * @param string $connectionName
+     * @param AsyncAwsSqsJob $job
      * @see \Illuminate\Queue\Worker::raiseAfterJobEvent()
      */
     private function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
@@ -118,9 +128,12 @@ class LaravelSqsHandler extends SqsHandler
     }
 
     /**
+     * @param string $connectionName
+     * @param AsyncAwsSqsJob $job
+     * @param Throwable $e
      * @see \Illuminate\Queue\Worker::raiseExceptionOccurredJobEvent()
      */
-    private function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
+    private function raiseExceptionOccurredJobEvent(string $connectionName, AsyncAwsSqsJob $job, Throwable $e): void
     {
         $this->events->dispatch(new JobExceptionOccurred(
             $connectionName,
