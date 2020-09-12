@@ -71,11 +71,6 @@ class LaravelSqsHandler extends SqsHandler
         }
     }
 
-    /**
-     * @param string $connectionName
-     * @param AsyncAwsSqsJob $job
-     * @throws Throwable
-     */
     private function process(string $connectionName, AsyncAwsSqsJob $job): void
     {
         try {
@@ -98,10 +93,6 @@ class LaravelSqsHandler extends SqsHandler
         }
     }
 
-    /**
-     * @param string $connectionName
-     * @param AsyncAwsSqsJob $job
-     */
     private function raiseBeforeJobEvent(string $connectionName, AsyncAwsSqsJob $job): void
     {
         $this->events->dispatch(new JobProcessing(
@@ -110,10 +101,6 @@ class LaravelSqsHandler extends SqsHandler
         ));
     }
 
-    /**
-     * @param string $connectionName
-     * @param AsyncAwsSqsJob $job
-     */
     private function raiseAfterJobEvent(string $connectionName, AsyncAwsSqsJob $job): void
     {
         $this->events->dispatch(new JobProcessed(
@@ -122,11 +109,6 @@ class LaravelSqsHandler extends SqsHandler
         ));
     }
 
-    /**
-     * @param string $connectionName
-     * @param AsyncAwsSqsJob $job
-     * @param Throwable $e
-     */
     private function raiseExceptionOccurredJobEvent(string $connectionName, AsyncAwsSqsJob $job, Throwable $e): void
     {
         $this->events->dispatch(new JobExceptionOccurred(
