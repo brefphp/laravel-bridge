@@ -153,7 +153,8 @@ Note that on AWS Lambda, you do not need to create `AWS_ACCESS_KEY_ID` and `AWS_
 
 ```diff
         'sqs' => [
-            'driver' => 'sqs',
+-           'driver' => 'sqs',
++           'driver' => 'async-aws-sqs',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
 +           'token' => env('AWS_SESSION_TOKEN'),
