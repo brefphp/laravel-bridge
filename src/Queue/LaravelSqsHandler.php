@@ -32,7 +32,7 @@ class LaravelSqsHandler extends SqsHandler
     /** @var string */
     private $queue;
 
-    public function __construct(Container $container, Dispatcher $events, string $connection, string $queue)
+    public function __construct(Container $container, Dispatcher $events, string $connection = 'sqs', ?string $queue = null)
     {
         $this->container = $container;
         /** @var QueueManager $queueManager */
@@ -44,7 +44,7 @@ class LaravelSqsHandler extends SqsHandler
         $this->sqs = $queueConnector->getSqs();
         $this->events = $events;
         $this->connectionName = $connection;
-        $this->queue = $queue;
+        $this->queue = $queueConnector->getQueue($queue);
     }
 
     public function handleSqs(SqsEvent $event, Context $context): void
