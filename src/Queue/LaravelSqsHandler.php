@@ -49,6 +49,10 @@ class LaravelSqsHandler extends SqsHandler
 
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        $this->container->singleton(Context::class, function () use ($context) {
+            return $context;
+        });
+
         foreach ($event->getRecords() as $sqsRecord) {
             $recordData = $sqsRecord->toArray();
             $jobData = [

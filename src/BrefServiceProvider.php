@@ -2,6 +2,9 @@
 
 namespace Bref\LaravelBridge;
 
+use Bref\Context\Context;
+use Bref\Context\ContextBuilder;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -64,5 +67,26 @@ class BrefServiceProvider extends ServiceProvider
         // to avoid errors. If you want to actively use the cache, it will be best to use
         // the dynamodb driver instead.
         Config::set('cache.stores.file.path', '/tmp/storage/framework/cache');
+
+        $this->registerInvocationContext();
+    }
+
+    protected function registerInvocationContext(): void
+    {
+        $this->app->singleton(Context::class, function () {
+            $contextBuilder = new ContextBuilder;
+            $rawInvocationContext = Arr::get($_SERVER, 'LAMBDA_INVOCATION_CONTEXT');
+
+            if ($rawInvocationContext) {
+                $invocationContext = json_decode($rawInvocationContext, true);
+
+                $contextBuilder->setAwsRequestId($invocationContext['awsRequestId']);
+                $contextBuilder->setDeadlineMs($invocationContext['deadlineMs']);
+                $contextBuilder->setInvokedFunctionArn($invocationContext['invokedFunctionArn']);
+                $contextBuilder->setTraceId($invocationContext['traceId']);
+            }
+
+            return $contextBuilder->buildContext();
+        });
     }
 }
