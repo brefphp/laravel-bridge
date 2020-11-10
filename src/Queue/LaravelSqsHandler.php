@@ -7,6 +7,7 @@ use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
@@ -123,8 +124,9 @@ class LaravelSqsHandler extends SqsHandler
     private function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
     {
         // Before bref handles the exception, we send it to the laravel log driver to allow
-        // worker exceptions to be pushed to the defined log channel, as well as stderr.
-        report($e);
+        // worker exceptions to be pushed to the defined log channel, aswell as stderr.
+        // The report helper
+        Container::getInstance()->make(ExceptionHandler::class, [])->report($e);
 
         $this->events->dispatch(new JobExceptionOccurred(
             $connectionName,
