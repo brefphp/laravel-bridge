@@ -122,6 +122,10 @@ class LaravelSqsHandler extends SqsHandler
      */
     private function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
     {
+        // Before bref handles the exception, we send it to the laravel log driver to allow
+        // worker exceptions to be pushed to the defined log channel, as well as stderr.
+        report($e);
+
         $this->events->dispatch(new JobExceptionOccurred(
             $connectionName,
             $job,
