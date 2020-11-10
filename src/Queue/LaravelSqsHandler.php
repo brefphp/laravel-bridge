@@ -125,7 +125,6 @@ class LaravelSqsHandler extends SqsHandler
     {
         // Before bref handles the exception, we send it to the laravel log driver to allow
         // worker exceptions to be pushed to the defined log channel, aswell as stderr.
-        // The report helper
         Container::getInstance()->make(ExceptionHandler::class, [])->report($e);
 
         $this->events->dispatch(new JobExceptionOccurred(
