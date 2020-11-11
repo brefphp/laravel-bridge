@@ -28,12 +28,14 @@ class LaravelSqsHandler extends SqsHandler
     private $sqs;
     /** @var Dispatcher */
     private $events;
+    /** @var ExceptionHandler */
+    private $exceptions;
     /** @var string */
     private $connectionName;
     /** @var string */
     private $queue;
 
-    public function __construct(Container $container, Dispatcher $events, string $connection, string $queue)
+    public function __construct(Container $container, Dispatcher $events, ExceptionHandler $exceptions, string $connection, string $queue)
     {
         $this->container = $container;
         /** @var QueueManager $queueManager */
@@ -44,6 +46,7 @@ class LaravelSqsHandler extends SqsHandler
         }
         $this->sqs = $queueConnector->getSqs();
         $this->events = $events;
+        $this->exceptions = $exceptions;
         $this->connectionName = $connection;
         $this->queue = $queue;
     }
@@ -89,6 +92,10 @@ class LaravelSqsHandler extends SqsHandler
 
             $this->raiseAfterJobEvent($connectionName, $job);
         } catch (Throwable $e) {
+            // Report exception to defined log channel
+            $this->exceptions->report($e);
+
+            // Fire off an exception event
             $this->raiseExceptionOccurredJobEvent($connectionName, $job, $e);
 
             // Rethrow the exception to let SQS handle it
@@ -123,10 +130,6 @@ class LaravelSqsHandler extends SqsHandler
      */
     private function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
     {
-        // Before bref handles the exception, we send it to the laravel log driver to allow
-        // worker exceptions to be pushed to the defined log channel, aswell as stderr.
-        Container::getInstance()->make(ExceptionHandler::class, [])->report($e);
-
         $this->events->dispatch(new JobExceptionOccurred(
             $connectionName,
             $job,
