@@ -92,11 +92,11 @@ class LaravelSqsHandler extends SqsHandler
 
             $this->raiseAfterJobEvent($connectionName, $job);
         } catch (Throwable $e) {
-            // Report exception to defined log channel
-            $this->exceptions->report($e);
-
             // Fire off an exception event
             $this->raiseExceptionOccurredJobEvent($connectionName, $job, $e);
+
+            // Report exception to defined log channel
+            $this->exceptions->report($e);
 
             // Rethrow the exception to let SQS handle it
             throw $e;
