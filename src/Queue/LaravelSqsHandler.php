@@ -7,6 +7,7 @@ use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
@@ -27,12 +28,14 @@ class LaravelSqsHandler extends SqsHandler
     private $sqs;
     /** @var Dispatcher */
     private $events;
+    /** @var ExceptionHandler */
+    private $exceptions;
     /** @var string */
     private $connectionName;
     /** @var string */
     private $queue;
 
-    public function __construct(Container $container, Dispatcher $events, string $connection, string $queue)
+    public function __construct(Container $container, Dispatcher $events, ExceptionHandler $exceptions, string $connection, string $queue)
     {
         $this->container = $container;
         /** @var QueueManager $queueManager */
@@ -43,6 +46,7 @@ class LaravelSqsHandler extends SqsHandler
         }
         $this->sqs = $queueConnector->getSqs();
         $this->events = $events;
+        $this->exceptions = $exceptions;
         $this->connectionName = $connection;
         $this->queue = $queue;
     }
@@ -88,7 +92,11 @@ class LaravelSqsHandler extends SqsHandler
 
             $this->raiseAfterJobEvent($connectionName, $job);
         } catch (Throwable $e) {
+            // Fire off an exception event
             $this->raiseExceptionOccurredJobEvent($connectionName, $job, $e);
+
+            // Report exception to defined log channel
+            $this->exceptions->report($e);
 
             // Rethrow the exception to let SQS handle it
             throw $e;
