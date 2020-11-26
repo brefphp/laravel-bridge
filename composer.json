@@ -16,16 +16,16 @@
         }
     },
     "require": {
-        "php": "^7.3",
+        "php": ">=7.3",
         "ext-json": "*",
-        "bref/bref": "~0.5.20",
+        "bref/bref": "^1.0",
         "illuminate/queue": "^6.0|^7.0|^8.0",
         "illuminate/support": "^6.0|^7.0|^8.0",
         "aws/aws-sdk-php": "^3.134"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0",
-        "mnapoli/hard-mode": "^0.2.0",
+        "mnapoli/hard-mode": "^0.3.0",
         "phpstan/phpstan": "^0.12.0",
         "symfony/filesystem": "^5.0",
         "symfony/process": "^5.0"

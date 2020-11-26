@@ -6,7 +6,7 @@ provider:
     region: us-east-1
     # The stage of the application, e.g. dev, production, staging… ('dev' is the default)
     stage: dev
-    runtime: provided
+    runtime: provided.al2
 
 package:
     # Directories to exclude from deployment
@@ -25,8 +25,7 @@ functions:
         layers:
             - ${bref:layer.php-74-fpm}
         events:
-            -   http: 'ANY /'
-            -   http: 'ANY /{proxy+}'
+            -   httpApi: '*'
     # This function lets us run artisan commands in Lambda
     artisan:
         handler: artisan
