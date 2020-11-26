@@ -38,8 +38,8 @@ class LaravelSqsHandler extends SqsHandler
     public function __construct(Container $container, Dispatcher $events, ExceptionHandler $exceptions, string $connection, string $queue)
     {
         $this->container = $container;
-        /** @var QueueManager $queueManager */
         $queueManager = $container->get('queue');
+        \assert($queueManager instanceof QueueManager);
         $queueConnector = $queueManager->connection($connection);
         if (! $queueConnector instanceof SqsQueue) {
             throw new \RuntimeException("The '$connection' connection is not a SQS connection in the Laravel config");
