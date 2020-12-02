@@ -59,7 +59,7 @@ class LaravelSqsHandler extends SqsHandler
         foreach ($event->getRecords() as $sqsRecord) {
             $message = $this->normalizeMessage($sqsRecord->toArray());
 
-            $worker->runVaporJob(
+            $worker->runSqsJob(
                 $this->buildJob($message),
                 $this->connectionName,
                 $this->getWorkerOptions()

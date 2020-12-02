@@ -2,20 +2,13 @@
 
 namespace Bref\LaravelBridge\Queue;
 
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\Worker as LaravelWorker;
 use Illuminate\Queue\WorkerOptions;
 
 class Worker extends LaravelWorker
 {
-    /**
-     * Process the given job.
-     *
-     * @param \Illuminate\Contracts\Queue\Job $job
-     * @param string $connectionName
-     * @param \Illuminate\Queue\WorkerOptions $options
-     * @return void
-     */
-    public function runVaporJob($job, $connectionName, WorkerOptions $options)
+    public function runSqsJob(Job $job, string $connectionName, WorkerOptions $options): void
     {
         pcntl_async_signals(true);
 
