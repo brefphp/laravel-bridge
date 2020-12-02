@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Bref\LaravelBridge\Queue;
 
@@ -8,10 +7,7 @@ use Illuminate\Queue\Jobs\SqsJob as LaravelSqsJob;
 class SqsJob extends LaravelSqsJob
 {
     /**
-     * Release the job back into the queue.
-     *
-     * @param int $delay
-     * @return void
+     * {@inheritDoc}
      */
     public function release($delay = 0)
     {
@@ -34,9 +30,7 @@ class SqsJob extends LaravelSqsJob
     }
 
     /**
-     * Get the number of times the job has been attempted.
-     *
-     * @return int
+     * {@inheritDoc}
      */
     public function attempts()
     {
