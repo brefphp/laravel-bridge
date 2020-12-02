@@ -12,7 +12,6 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Queue\Jobs\SqsJob;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\SqsQueue;
 use Throwable;
