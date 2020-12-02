@@ -16,10 +16,17 @@ use Illuminate\Queue\WorkerOptions;
  */
 class LaravelSqsHandler extends SqsHandler
 {
-    private Container $container;
-    private SqsClient $sqs;
-    private string $connectionName;
-    private string $queue;
+    /** @var Container $container */
+    private $container;
+
+    /** @var SqsClient */
+    private $sqs;
+
+    /** @var string */
+    private $connectionName;
+
+    /** @var string */
+    private $queue;
 
     public function __construct(Container $container, string $connection, string $queue)
     {
@@ -80,15 +87,20 @@ class LaravelSqsHandler extends SqsHandler
 
     protected function getWorkerOptions(): WorkerOptions
     {
-        return new WorkerOptions(
-            'default',
+        $options = [
             0,
-            512,
+            $memory = 512,
             0,
-            0,
+            $sleep = 0,
             0,
             false,
-            false
-        );
+            false,
+        ];
+
+        if (property_exists(WorkerOptions::class, 'name')) {
+            $options = array_merge(['default'], $options);
+        }
+
+        return new WorkerOptions(...$options);
     }
 }
