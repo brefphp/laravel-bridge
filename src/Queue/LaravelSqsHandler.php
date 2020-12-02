@@ -88,13 +88,15 @@ class LaravelSqsHandler extends SqsHandler
     protected function getWorkerOptions(): WorkerOptions
     {
         $options = [
-            0,
+            $backoff = 0,
             $memory = 512,
-            0,
+            $timeout = 0,
             $sleep = 0,
-            0,
-            false,
-            false,
+            $maxTries = 0,
+            $force = false,
+            $stopWhenEmpty = false,
+            $maxJobs = 0,
+            $maxTime = 0,
         ];
 
         if (property_exists(WorkerOptions::class, 'name')) {
