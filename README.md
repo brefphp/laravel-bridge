@@ -85,8 +85,9 @@ Here is a complete example with `serverless.yml` that creates the queue, as well
 provider:
     ...
     environment:
-        APP_ENV: production
-        SQS_QUEUE: !Ref AlertQueue
+      APP_ENV: production
+      QUEUE_CONNECTION: sqs
+      SQS_QUEUE: !Ref AlertQueue
         # If you create the queue manually, the `SQS_QUEUE` variable can be defined like this:
         # SQS_QUEUE: https://sqs.us-east-1.amazonaws.com/your-account-id/my-queue
     iamRoleStatements:
