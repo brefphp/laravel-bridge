@@ -4,6 +4,10 @@ namespace Bref\LaravelBridge\Queue;
 
 use Illuminate\Queue\Jobs\SqsJob as LaravelSqsJob;
 
+/**
+ * @author Taylor Otwell <taylor@laravel.com>
+ * @copyright Copyright (c) 2019, Taylor Otwell
+ */
 class SqsJob extends LaravelSqsJob
 {
     /**
