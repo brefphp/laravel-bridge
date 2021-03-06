@@ -92,7 +92,7 @@ class LaravelSqsHandler extends SqsHandler
             $memory = 512,
             $timeout = 0,
             $sleep = 0,
-            $maxTries = 0,
+            $maxTries = 3,
             $force = false,
             $stopWhenEmpty = false,
             $maxJobs = 0,
