@@ -7,7 +7,7 @@ use Symfony\Component\Process\Process;
 
 class FunctionalTest extends TestCase
 {
-    public function test()
+    public function test run without errors()
     {
         // We run the test via a separate process to ensure that we have a
         // blank Laravel kernel not impacted by
@@ -15,5 +15,15 @@ class FunctionalTest extends TestCase
         $handler->setWorkingDirectory(__DIR__);
         $handler->mustRun();
         $this->assertEquals("Before job\nProcessing podcast 12345\nAfter job\n", $handler->getOutput());
+        $this->assertEmpty($handler->getErrorOutput());
+    }
+
+    public function test make an error without view compiled path()
+    {
+        $handler = new Process(["php", "test-trigger.php"]);
+        $handler->setEnv(["VIEW_COMPILED_PATH" => null]);
+        $handler->setWorkingDirectory(__DIR__);
+        $handler->mustRun();
+        $this->assertNotEmpty($handler->getErrorOutput());
     }
 }

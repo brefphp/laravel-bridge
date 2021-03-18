@@ -10,8 +10,19 @@ class BrefServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $compiledViewDirectory = Config::get('view.compiled', '');
+
+        // Make sure the config is correctly declared. If not, Config::get will return an empty string
+        if (empty($compiledViewDirectory)) {
+            throw new RuntimeException('Configuration `view.compiled` is not declared');
+        }
+
+        // Make sure the declared view.compiled is a string
+        if (! is_string($compiledViewDirectory)) {
+            throw new RuntimeException('Configuration `view.compiled` must be a valid string');
+        }
+
         // Make sure the directory for compiled views exist
-        $compiledViewDirectory = Config::get('view.compiled');
         if (! is_dir($compiledViewDirectory)) {
             // The directory doesn't exist: let's create it, else Laravel will not create it automatically
             // and will fail with an error
