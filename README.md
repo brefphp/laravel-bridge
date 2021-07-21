@@ -133,33 +133,11 @@ Note that on AWS Lambda, you do not need to create `AWS_ACCESS_KEY_ID` and `AWS_
             'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
 ```
 
-Next, create a `worker.php` file. This is the file that will handle SQS events in AWS Lambda:
+Finally, create the `worker.php` file. This is the file that will handle SQS events in AWS Lambda:
 
-```php
-<?php declare(strict_types=1);
-
-use Bref\LaravelBridge\Queue\LaravelSqsHandler;
-use Illuminate\Foundation\Application;
-
-require __DIR__ . '/vendor/autoload.php';
-/** @var Application $app */
-$app = require __DIR__ . '/bootstrap/app.php';
-
-/**
- * For Lumen, use:
- * $app->make(Laravel\Lumen\Console\Kernel::class);
- * $app->boot();
- */
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-return $app->makeWith(LaravelSqsHandler::class, [
-    'connection' => 'sqs', // this is the Laravel Queue connection
-    'queue' => getenv('SQS_QUEUE'),
-]);
+```bash
+php artisan vendor:publish --tag=serverless-worker
 ```
-
-You may need to adjust the `connection` and `queue` options above if you customized the configuration in `config/queue.php`. If you are unsure, have a look [at the official Laravel documentation about connections and queues](https://laravel.com/docs/7.x/queues#connections-vs-queues).
 
 That's it! Anytime a job is pushed to the SQS queue, SQS will invoke `worker.php` on AWS Lambda and our job will be executed.
 

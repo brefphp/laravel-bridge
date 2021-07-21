@@ -34,6 +34,9 @@ class BrefServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/serverless.yml' => $this->app->basePath('serverless.yml'),
         ], 'serverless-config');
+        $this->publishes([
+            __DIR__ . '/../worker.php' => $this->app->basePath('worker.php'),
+        ], 'serverless-worker');
     }
 
     public function register(): void
