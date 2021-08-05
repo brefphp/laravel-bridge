@@ -12,7 +12,7 @@ In any case, it is recommended to [first learn about serverless, AWS Lambda and 
 ## Installation
 
 ```bash
-composer require bref/laravel-bridge
+composer require bref/laravel-bridge --update-with-dependencies
 ```
 
 The `Bref\LaravelBridge\BrefServiceProvider` service provider will be registered automatically.
