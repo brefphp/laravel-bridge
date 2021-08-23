@@ -1,4 +1,16 @@
 service: laravel
+useDotenv: true
+
+custom:
+    dotenv:
+        file: true
+        exclude:
+            - AWS_ACCESS_KEY_ID
+            - AWS_SECRET_ACCESS_KEY
+            - AWS_DEFAULT_REGION
+            - NODE_ENV
+        required:
+            - APP_KEY
 
 provider:
     name: aws
@@ -10,12 +22,14 @@ provider:
 
 package:
     # Directories to exclude from deployment
-    exclude:
-        - node_modules/**
-        - public/storage
-        - resources/assets/**
-        - storage/**
-        - tests/**
+    patterns:
+        - '!node_modules/**'
+        - '!public/storage'
+        - '!database/database.sqlite'
+        - '!resources/css/**'
+        - '!resources/js/**'
+        - '!storage/**'
+        - '!tests/**'
 
 functions:
     # This function runs the Laravel website/API
@@ -37,3 +51,4 @@ functions:
 plugins:
     # We need to include the Bref plugin
     - ./vendor/bref/bref
+    - serverless-dotenv-plugin
