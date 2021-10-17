@@ -11,12 +11,12 @@ provider:
 
 package:
     # Directories to exclude from deployment
-    exclude:
-        - node_modules/**
-        - public/storage
-        - resources/assets/**
-        - storage/**
-        - tests/**
+    patterns:
+        - !node_modules/**
+        - !public/storage
+        - !resources/assets/**
+        - !storage/**
+        - !tests/**
 
 functions:
     # This function runs the Laravel website/API
@@ -24,15 +24,15 @@ functions:
         handler: public/index.php
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
         layers:
-            - ${bref:layer.php-74-fpm}
+            - ${bref:layer.php-80-fpm}
         events:
-            -   httpApi: '*'
+            - httpApi: '*'
     # This function lets us run artisan commands in Lambda
     artisan:
         handler: artisan
         timeout: 120 # in seconds
         layers:
-            - ${bref:layer.php-74} # PHP
+            - ${bref:layer.php-80} # PHP
             - ${bref:layer.console} # The "console" layer
 
 plugins:
