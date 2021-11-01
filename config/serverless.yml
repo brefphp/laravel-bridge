@@ -12,11 +12,11 @@ provider:
 package:
     # Directories to exclude from deployment
     patterns:
-        - !node_modules/**
-        - !public/storage
-        - !resources/assets/**
-        - !storage/**
-        - !tests/**
+        - '!node_modules/**'
+        - '!public/storage'
+        - '!resources/assets/**'
+        - '!storage/**'
+        - '!tests/**'
 
 functions:
     # This function runs the Laravel website/API
