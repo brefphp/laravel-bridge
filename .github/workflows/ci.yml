@@ -9,7 +9,7 @@ jobs:
         strategy:
             max-parallel: 10
             matrix:
-                php: ['7.3', '7.4', '8.0', '8.1']
+                php: ['8.0', '8.1']
 
         steps:
             - name: Set up PHP
@@ -39,7 +39,7 @@ jobs:
             - name: Set up PHP
               uses: shivammathur/setup-php@2.1.0
               with:
-                  php-version: 7.3
+                  php-version: 8.0
                   coverage: none
 
             - name: Checkout code
@@ -53,5 +53,5 @@ jobs:
 
             - name: Run tests
               env:
-                  PHP_VERSION: 7.3
+                  PHP_VERSION: 8.0
               run: ./vendor/bin/phpunit
