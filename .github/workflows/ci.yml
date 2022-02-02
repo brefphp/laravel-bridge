@@ -9,7 +9,7 @@ jobs:
         strategy:
             max-parallel: 10
             matrix:
-                php: ['8.0', '8.1']
+                php: ['7.3', '7.4', '8.0', '8.1']
 
         steps:
             - name: Set up PHP
