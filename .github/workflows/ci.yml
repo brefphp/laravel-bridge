@@ -18,6 +18,8 @@ jobs:
                   php-version: ${{ matrix.php }}
                   coverage: none
 
+            - run: php --version
+
             - name: Checkout code
               uses: actions/checkout@v2
 
@@ -41,6 +43,8 @@ jobs:
               with:
                   php-version: '7.3'
                   coverage: none
+
+            - run: php --version
 
             - name: Checkout code
               uses: actions/checkout@v2
