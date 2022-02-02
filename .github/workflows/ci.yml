@@ -39,7 +39,7 @@ jobs:
             - name: Set up PHP
               uses: shivammathur/setup-php@2.1.0
               with:
-                  php-version: 8.0
+                  php-version: 7.3
                   coverage: none
 
             - name: Checkout code
@@ -53,5 +53,5 @@ jobs:
 
             - name: Run tests
               env:
-                  PHP_VERSION: 8.0
+                  PHP_VERSION: 7.3
               run: ./vendor/bin/phpunit
