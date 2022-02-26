@@ -10,7 +10,7 @@
     "require": {
         "php": ">=7.2.5",
         "aws/aws-sdk-php": "^3.134",
-        "bref/bref": "^1.0",
+        "bref/bref": "^1.5",
         "fideloper/proxy": "^4.2",
         "fruitcake/laravel-cors": "^1.0",
         "guzzlehttp/guzzle": "^7.0.1",

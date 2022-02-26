@@ -9,11 +9,11 @@ jobs:
         strategy:
             max-parallel: 10
             matrix:
-                php: ['7.3', '7.4', '8.0']
+                php: ['7.3', '7.4', '8.0', '8.1']
 
         steps:
             - name: Set up PHP
-              uses: shivammathur/setup-php@2.1.0
+              uses: shivammathur/setup-php@2.16.0
               with:
                   php-version: ${{ matrix.php }}
                   coverage: none
@@ -37,9 +37,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Set up PHP
-              uses: shivammathur/setup-php@2.1.0
+              uses: shivammathur/setup-php@2.16.0
               with:
-                  php-version: 7.3
+                  php-version: '7.3'
                   coverage: none
 
             - name: Checkout code

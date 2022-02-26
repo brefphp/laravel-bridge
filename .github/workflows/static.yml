@@ -17,16 +17,28 @@ jobs:
                   args: analyze --no-progress
 
     phpcs:
-        name: PHPCS
+        name: PHP CodeSniffer
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
 
-            - name: Download dependencies
-              run: composer update --no-interaction --prefer-dist  --no-progress --no-suggest --dev
-
-            - name: PHPCS check
-              uses: chekalsky/phpcs-action@v1
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
               with:
-                  phpcs_bin_path: './vendor/bin/phpcs'
+                  php-version: 8.0
+                  tools: composer:v2, cs2pr
+                  coverage: none
+
+            - name: Cache Composer dependencies
+              uses: actions/cache@v2
+              with:
+                  path: ~/.composer/cache
+                  key: php-composer-locked-${{ hashFiles('composer.lock') }}
+                  restore-keys: php-composer-locked-
+
+            - name: Install dependencies
+              run: composer install --no-interaction --prefer-dist --no-progress
+
+            - name: PHP CS
+              run: vendor/bin/phpcs -q --no-colors --report=checkstyle | cs2pr
