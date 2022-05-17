@@ -1,0 +1,38 @@
+{
+    "name": "cachewerk/bref-laravel-bridge",
+    "description": "A better Laravel integration for Bref, including Octane support.",
+    "keywords": [
+       "laravel",
+       "bref"
+    ],
+    "homepage": "https://github.com/cachewerk/bref-laravel-bridge",
+    "license": "MIT",
+    "require": {
+        "php": "^7.4|^8.0",
+        "aws/aws-sdk-php": "^3.222",
+        "bref/bref": "^1.5",
+        "illuminate/http": "^8.0|^9.0",
+        "illuminate/queue": "^8.0|^9.0",
+        "illuminate/support": "^8.0|^9.0",
+        "laravel/octane": "^1.2",
+        "monolog/monolog": "^2.0",
+        "riverline/multipart-parser": "^2.0"
+    },
+    "autoload": {
+       "psr-4": {
+          "CacheWerk\\BrefLaravelBridge\\": "src"
+       }
+    },
+    "extra": {
+       "laravel": {
+          "providers": [
+             "CacheWerk\\BrefLaravelBridge\\BrefServiceProvider"
+          ]
+       }
+    },
+    "config": {
+       "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

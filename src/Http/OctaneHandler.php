@@ -1,0 +1,30 @@
+<?php
+
+namespace CacheWerk\BrefLaravelBridge\Http;
+
+use CacheWerk\BrefLaravelBridge\Octane\OctaneClient;
+
+use Illuminate\Http\Request;
+
+use Bref\Context\Context;
+use Bref\Event\Http\HttpHandler;
+use Bref\Event\Http\HttpResponse;
+use Bref\Event\Http\HttpRequestEvent;
+
+class OctaneHandler extends HttpHandler
+{
+    public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
+    {
+        $request = Request::createFromBase(
+            RequestBridge::convertRequest($event, $context)
+        );
+
+        $response = OctaneClient::handle($request);
+
+        return new HttpResponse(
+            $response->getContent(),
+            $response->headers->all(),
+            $response->getStatusCode()
+        );
+    }
+}
