@@ -7,6 +7,7 @@ A better Laravel integration for Bref, including Octane support.
 - [ ] Publish runtime command
 - [ ] Finish readme
 - [ ] Publish to Packagist
+- [ ] Support persistent PostgreSQL connections
 
 ## Installation
 
@@ -32,7 +33,7 @@ functions:
   web:
     handler: php/runtime.php
     environment:
-      BREF_BINARY_RESPONSES: 1
+      BREF_BINARY_RESPONSES: 1 # optional
     layers:
       - ${bref:layer.php-81}
     events:
@@ -47,7 +48,7 @@ functions:
     environment:
       APP_RUNTIME: octane
       BREF_LOOP_MAX: 250
-      BREF_BINARY_RESPONSES: 1
+      BREF_BINARY_RESPONSES: 1 # optional
     layers:
       - ${bref:layer.php-81}
     events:
