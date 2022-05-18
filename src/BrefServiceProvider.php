@@ -21,6 +21,8 @@ class BrefServiceProvider extends ServiceProvider
             return;
         }
 
+        $this->mergeConfigFrom(__DIR__ . '/../config/bref.php', 'bref');
+
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
         $this->app->rebinding('request', function ($app, $request) {
@@ -74,8 +76,14 @@ class BrefServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->publishes([
-            __DIR__ . '/../stubs/runtime.php' => base_path('php/runtime.php'),
-        ], 'bref-runtime');
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/../config/bref.php' => config_path('bref.php'),
+            ], 'bref-config');
+
+            $this->publishes([
+                __DIR__ . '/../stubs/runtime.php' => base_path('php/runtime.php'),
+            ], 'bref-runtime');
+        }
     }
 }

@@ -47,7 +47,6 @@ functions:
     environment:
       APP_RUNTIME: octane
       BREF_LOOP_MAX: 250
-      BREF_BINARY_RESPONSES: 1
     layers:
       - ${bref:layer.php-81}
     events:
@@ -100,3 +99,27 @@ sls deploy --stage=staging
 ```
 
 Check out some more [comprehensive examples](examples/).
+
+## Configuration
+
+### Serving static assets
+
+If you want to serve some static assets from your app's `public` directory, you can use the `ServeStaticAssets` middleware.
+
+First, publish the configuration:
+
+```
+php artisan vendor:publish --tag=bref-runtime
+```
+
+Then define the files you want to serve in `bref.assets`.
+
+Lastly tell Bref to support binary responses on your `web` function:
+
+```yml
+functions:
+  web:
+    handler: php/runtime.php
+    environment:
+      BREF_BINARY_RESPONSES: 1
+```

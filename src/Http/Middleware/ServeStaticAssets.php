@@ -5,6 +5,7 @@ namespace CacheWerk\BrefLaravelBridge\Http\Middleware;
 use Closure;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Response;
 
 class ServeStaticAssets
@@ -18,48 +19,36 @@ class ServeStaticAssets
      */
     public function handle(Request $request, Closure $next)
     {
-        $requestUri = $request->getRequestUri();
+        $requestPath = rawurldecode(ltrim($request->getPathInfo(), '/'));
+        $file = public_path($requestPath);
 
-        if (str_starts_with($requestUri, '/favicon.ico')) {
-            return $this->favicon();
+        if (! in_array($requestPath, Config::get('bref.assets', [])) || ! file_exists($file)) {
+            return $next($request);
         }
-
-        if (str_starts_with($requestUri, '/robots.txt')) {
-            return $this->robotstxt();
-        }
-
-        return $next($request);
-    }
-
-    /**
-     * Return a `favicon.ico` response.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    protected function favicon()
-    {
-        $file = public_path('favicon.ico');
 
         return Response::make(file_get_contents($file), 200, [
-            'Content-Type' => 'image/x-icon',
-            'Cache-Control' => 'public, max-age=86400',
+            'Cache-Control' => 'public',
+            'Content-Type' => $this->getMimeType($file),
+            'Content-Length' => filesize($file),
             'ETag' => hash_file('sha1', $file),
         ]);
     }
 
     /**
-     * Return a `robots.txt` response.
+     * Returns the cleaned mime-type of the given file.
      *
-     * @return \Illuminate\Http\Response
+     * @param  string  $file
+     * @return string
      */
-    protected function robotstxt()
+    protected function getMimeType(string $file)
     {
-        $file = public_path('robots.txt');
+        $mimeType = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file);
+        $mimeType = strstr($mimeType, ';', true);
 
-        return Response::make(file_get_contents($file), 200, [
-            'Content-Type' => 'text/plain',
-            'Cache-Control' => 'public, max-age=86400',
-            'ETag' => hash_file('sha1', $file),
-        ]);
+        return str_replace(
+            ['image/vnd.microsoft.icon'],
+            ['image/x-icon'],
+            $mimeType
+        );
     }
 }
