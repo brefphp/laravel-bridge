@@ -31,8 +31,7 @@ class BrefServiceProvider extends ServiceProvider
             ]);
         });
 
-        $account = env('AWS_ACCOUNT_ID');
-        $region = env('AWS_REGION', env('AWS_DEFAULT_REGION', 'us-east-1'));
+        $this->fixDefaultConfiguration();
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
 
@@ -51,22 +50,13 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('filesystems.disks.s3.secret');
         Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
 
+        $account = env('AWS_ACCOUNT_ID');
+        $region = env('AWS_REGION', env('AWS_DEFAULT_REGION', 'us-east-1'));
+
         Config::set('queue.connections.sqs.key');
         Config::set('queue.connections.sqs.secret');
         Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
         Config::set('queue.connections.sqs.prefix', env('SQS_PREFIX', "https://sqs.{$region}.amazonaws.com/{$account}"));
-
-        if (Config::get('session.driver') === 'file') {
-            Config::set('session.driver', 'cookie');
-        }
-
-        if (Config::get('filesystems.default') === 'local') {
-            Config::set('filesystems.default', 's3');
-        }
-
-        if (Config::get('logging.default') === 'stack') {
-            Config::set('logging.default', 'stderr');
-        }
     }
 
     /**
@@ -84,6 +74,26 @@ class BrefServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../stubs/runtime.php' => base_path('php/runtime.php'),
             ], 'bref-runtime');
+        }
+    }
+
+    /**
+     * Prevent the default Laravel configuration from causing errors.
+     *
+     * @return void
+     */
+    protected function fixDefaultConfiguration()
+    {
+        if (Config::get('session.driver') === 'file') {
+            Config::set('session.driver', 'cookie');
+        }
+
+        if (Config::get('filesystems.default') === 'local') {
+            Config::set('filesystems.default', 's3');
+        }
+
+        if (Config::get('logging.default') === 'stack') {
+            Config::set('logging.default', 'stderr');
         }
     }
 }
