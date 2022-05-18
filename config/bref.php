@@ -18,4 +18,17 @@ return [
         // 'robots.txt',
     ],
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Shared Log Context
+    |--------------------------------------------------------------------------
+    |
+    | In order to make debugging a little easier, the Lambda `X-Request-ID`
+    | value can be added to the shared log context automatically.
+    |
+    */
+
+    'request_context' => false,
+
 ];

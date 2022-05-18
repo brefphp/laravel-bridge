@@ -17,19 +17,14 @@ class BrefServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__ . '/../config/bref.php', 'bref');
+        $this->shareRequestContext();
+
         if (! isset($_SERVER['LAMBDA_TASK_ROOT'])) {
             return;
         }
 
-        $this->mergeConfigFrom(__DIR__ . '/../config/bref.php', 'bref');
-
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
-
-        $this->app->rebinding('request', function ($app, $request) {
-            $app->make('log')->shareContext([
-                'requestId' => $request->header('X-Request-ID'),
-            ]);
-        });
 
         $this->fixDefaultConfiguration();
 
@@ -75,6 +70,26 @@ class BrefServiceProvider extends ServiceProvider
                 __DIR__ . '/../stubs/runtime.php' => base_path('php/runtime.php'),
             ], 'bref-runtime');
         }
+    }
+
+    /**
+     * Add the request identifier to the shared log context.
+     *
+     * @return void
+     */
+    protected function shareRequestContext()
+    {
+        if (! Config::get('bref.request_context')) {
+            return;
+        }
+
+        $this->app->rebinding('request', function ($app, $request) {
+            if ($request->hasHeader('X-Request-ID')) {
+                $app->make('log')->shareContext([
+                    'requestId' => $request->header('X-Request-ID'),
+                ]);
+            }
+        });
     }
 
     /**
