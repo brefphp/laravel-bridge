@@ -13,6 +13,9 @@ use Bref\Event\Http\HttpRequestEvent;
 
 class OctaneHandler extends HttpHandler
 {
+    /**
+     * {@inheritDoc}
+     */
     public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
     {
         $request = Request::createFromBase(

@@ -22,6 +22,16 @@ use Illuminate\Queue\Events\JobExceptionOccurred;
 
 class QueueHandler extends SqsHandler
 {
+    /**
+     * Creates a new SQS queue handler instance.
+     *
+     * @param  \Illuminate\Container\Container  $container
+     * @param  \Illuminate\Contracts\Events\Dispatcher  $events
+     * @param  \Illuminate\Contracts\Debug\ExceptionHandler  $exceptions
+     * @param  string  $connection
+     * @param  string  $queue
+     * @return void
+     */
     public function __construct(
         protected Container $container,
         protected Dispatcher $events,
@@ -39,6 +49,13 @@ class QueueHandler extends SqsHandler
         $this->sqs = $queue->getSqs();
     }
 
+    /**
+     * Handle Bref SQS event.
+     *
+     * @param  \Bref\Event\Sqs\SqsEvent  $event
+     * @param  \Bref\Context\Context  $context
+     * @return void
+     */
     public function handleSqs(SqsEvent $event, Context $context): void
     {
         foreach ($event->getRecords() as $sqsRecord) {

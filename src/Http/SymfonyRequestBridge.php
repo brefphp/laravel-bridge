@@ -2,16 +2,24 @@
 
 namespace CacheWerk\BrefLaravelBridge\Http;
 
+use RuntimeException;
+
 use Bref\Context\Context;
 use Bref\Event\Http\HttpRequestEvent;
 
 use Riverline\MultiPartParser\StreamedPart;
-
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class SymfonyRequestBridge
 {
+    /**
+     * Convert Bref HTTP request to Symfony request.
+     *
+     * @param  \Bref\Event\Http\HttpRequestEvent  $event
+     * @param  \Bref\Context\Context  $context
+     * @return \Symfony\Component\HttpFoundation\Request
+     */
     public static function convertRequest(HttpRequestEvent $event, Context $context): Request
     {
         $server = array_filter([
@@ -56,6 +64,12 @@ class SymfonyRequestBridge
         );
     }
 
+    /**
+     * Parse request body and uploaded files.
+     *
+     * @param  \Bref\Event\Http\HttpRequestEvent  $event
+     * @return array
+     */
     protected static function parseBodyAndUploadedFiles(HttpRequestEvent $event): array
     {
         $bodyString = $event->getBody();
@@ -80,7 +94,7 @@ class SymfonyRequestBridge
                         if ($part->isFile()) {
                             $tmpPath = tempnam(sys_get_temp_dir(), 'bref_upload_');
                             if (false === $tmpPath) {
-                                throw new \RuntimeException('Unable to create a temporary directory');
+                                throw new RuntimeException('Unable to create a temporary directory');
                             }
                             file_put_contents($tmpPath, $part->getBody());
                             if (0 !== filesize($tmpPath) && '' !== $part->getFileName()) {
@@ -104,7 +118,10 @@ class SymfonyRequestBridge
     /**
      * Parse a string key like "files[id_cards][jpg][]" and do $array['files']['id_cards']['jpg'][] = $value.
      *
-     * @param mixed $value
+     * @param  array  $value
+     * @param  string  $key
+     * @param  mixed  $value
+     * @return void
      */
     protected static function parseKeyAndInsertValueInArray(array &$array, string $key, $value): void
     {

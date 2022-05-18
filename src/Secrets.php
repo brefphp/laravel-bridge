@@ -7,10 +7,10 @@ use Aws\Ssm\SsmClient;
 class Secrets
 {
     /**
-     * Inject SSM parameters into environment.
+     * Inject AWS SSM parameters into environment.
      *
      * @param  string  $path
-     * @param  array $parameters
+     * @param  array  $parameters
      * @return void
      */
     public static function injectIntoEnvironment(string $path, array $parameters)

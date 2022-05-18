@@ -12,13 +12,23 @@ use Bref\Event\Http\HttpHandler as BrefHttpHandler;
 
 class HttpHandler extends BrefHttpHandler
 {
-    protected $kernel;
+    /**
+     * Creates a new instance.
+     *
+     * @param  \Illuminate\Contracts\Http\Kernel  $kernel
+     * @return void
+     */
+    public function __construct(
+        protected Kernel $kernel
+    ) {}
 
-    public function __construct(Kernel $kernel)
-    {
-        $this->kernel = $kernel;
-    }
-
+    /**
+     * Handle given HTTP request event.
+     *
+     * @param  \Bref\Event\Http\HttpRequestEvent  $event
+     * @param  \Bref\Context\Context  $context
+     * @return \Bref\Event\Http\HttpResponse
+     */
     public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
     {
         $request = Request::createFromBase(
