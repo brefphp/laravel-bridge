@@ -18,7 +18,7 @@ So we built this.
 
 ## Installation
 
-First, be sure to make yourself familiar with Bref and [its Laravel bridge](https://bref.sh/docs/frameworks/laravel.html).
+First, be sure to familiarize yourself with Bref and its guide to [Serverless Laravel applications](https://bref.sh/docs/frameworks/laravel.html).
 
 Next, install the package and publish the custom Bref runtime:
 
@@ -28,7 +28,7 @@ composer require cachewerk/bref-laravel-bridge
 php artisan vendor:publish --tag=bref-runtime
 ```
 
-By default the runtime is published to `php/runtime.php` where Bref's PHP configuration resides, feel free to move it.
+By default the runtime is published to `php/` where Bref's PHP configuration resides, but it can be move anywhere.
 
 Next, we need to set up in the `AWS_ACCOUNT_ID` environment variable in your `serverless.yml`:
 
@@ -45,9 +45,9 @@ functions:
   web:
     handler: php/runtime.php
     environment:
-      APP_RUNTIME: octane       # omit to not use Octane
-      BREF_LOOP_MAX: 250        # omit to not use Octane
-      BREF_BINARY_RESPONSES: 1  # optional
+      APP_RUNTIME: octane
+      BREF_LOOP_MAX: 250
+      BREF_BINARY_RESPONSES: 1
     layers:
       - ${bref:layer.php-81}
     events:
@@ -80,15 +80,23 @@ functions:
           input: '"schedule:run"'
 ```
 
-## Configuration
-
-### Parameter Store secrets
+If you don't want to use Octane, simply remove `APP_RUNTIME` and `BREF_LOOP_MAX` from the `web` function.
 
 To avoid setting secrets as environment variables on your Lambda functions, you can inject them directly into the Lambda runtime:
 
 ```yml
 provider:
   environment:
-    APP_SSM_PREFIX: /example-${sls:stage}/
+    APP_SSM_PREFIX: /${self:service}-${sls:stage}/
     APP_SSM_PARAMETERS: "APP_KEY, DATABASE_URL"
 ```
+
+This will inject `APP_KEY` and `DATABASE_URL` using your service name and stage, for example from `/myapp-staging/APP_KEY`.
+
+Finally, deploy your app:
+
+```
+sls deploy --stage=staging
+```
+
+Check out some more [comprehensive examples](examples/).
