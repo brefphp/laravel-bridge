@@ -109,7 +109,7 @@ If you want to serve some static assets from your app's `public` directory, you 
 First, publish the configuration:
 
 ```
-php artisan vendor:publish --tag=bref-runtime
+php artisan vendor:publish --tag=bref-config
 ```
 
 Then define the files you want to serve in `bref.assets`.
