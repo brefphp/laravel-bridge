@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed 
 - Made `ServeStaticAssets` configurable ([19fb1ac](19fb1ac21fd7245a8bd529eb6325cea2308ffbf2))
-- Made shared `X-Request-ID` log context configurable
+- Made shared `X-Request-ID` log context configurable ([bfbc249](bfbc2498d3b418f149aba3d3fe795073dfcb7b48))
 
 ## [v0.1.0] - 2022-05-18
 ### Added
