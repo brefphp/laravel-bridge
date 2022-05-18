@@ -29,6 +29,8 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('logging.channels.stderr.formatter', JsonFormatter::class);
         Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
 
+        Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
+
         Config::set('cache.stores.dynamodb.key');
         Config::set('cache.stores.dynamodb.secret');
         Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));

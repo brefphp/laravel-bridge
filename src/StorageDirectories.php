@@ -22,7 +22,7 @@ class StorageDirectories
             // self::Path . '/app',
             // self::Path . '/logs',
             self::Path . '/bootstrap/cache',
-            // self::Path . '/framework/cache',
+            self::Path . '/framework/cache',
             self::Path . '/framework/views',
         ];
 
