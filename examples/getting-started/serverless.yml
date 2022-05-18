@@ -1,11 +1,23 @@
 service: example
 frameworkVersion: '3'
 
+params:
+  default:
+    assetsBucket: assets.example.com
+  production:
+    appUrl: https://example.com
+    debug: false
+    logLevel: info
+  staging:
+    appUrl: https://staging.example.com
+    debug: true
+    queue: null
+    logLevel: debug
+
 provider:
   name: aws
   region: us-east-1
   stage: staging
-  architecture: x86_64
   runtime: provided.al2
   environment:
     APP_URL: ${param:appUrl}
@@ -34,19 +46,6 @@ provider:
 plugins:
   - ./vendor/bref/bref
   - serverless-scriptable-plugin
-
-params:
-  default:
-    assetsBucket: assets.example.com
-  production:
-    appUrl: https://example.com
-    debug: false
-    logLevel: info
-  staging:
-    appUrl: https://staging.example.com
-    debug: true
-    queue: null
-    logLevel: debug
 
 functions:
   web:
