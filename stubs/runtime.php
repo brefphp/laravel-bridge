@@ -1,11 +1,11 @@
 <?php
 
-use CacheWerk\BrefLaravelBridge\Octane;
 use CacheWerk\BrefLaravelBridge\Secrets;
 use CacheWerk\BrefLaravelBridge\Http\HttpHandler;
 use CacheWerk\BrefLaravelBridge\Http\OctaneHandler;
 use CacheWerk\BrefLaravelBridge\Queue\QueueHandler;
 use CacheWerk\BrefLaravelBridge\StorageDirectories;
+use CacheWerk\BrefLaravelBridge\Octane\OctaneClient;
 
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -58,7 +58,7 @@ if (! $configIsCached) {
 }
 
 if ($runtime === 'octane') {
-    Octane::boot(realpath(__DIR__ . '/..'));
+    OctaneClient::boot(realpath(__DIR__ . '/..'));
 
     return new OctaneHandler($app);
 }
