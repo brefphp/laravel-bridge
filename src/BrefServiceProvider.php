@@ -21,14 +21,18 @@ class BrefServiceProvider extends ServiceProvider
             return;
         }
 
+        $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
+
         $account = env('AWS_ACCOUNT_ID');
         $region = env('AWS_REGION', env('AWS_DEFAULT_REGION', 'us-east-1'));
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
-        Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
+
         Config::set('logging.channels.stderr.formatter', JsonFormatter::class);
+
         Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
 
+        Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
         Config::set('cache.stores.dynamodb.key');
@@ -40,7 +44,13 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
         Config::set('queue.connections.sqs.prefix', env('SQS_PREFIX', "https://sqs.{$region}.amazonaws.com/{$account}"));
 
-        $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
+        if (Config::get('session.driver') === 'file') {
+            Config::set('session.driver', 'cookie');
+        }
+
+        if (Config::get('logging.default') === 'stack') {
+            Config::set('logging.default', 'stderr');
+        }
     }
 
     /**
