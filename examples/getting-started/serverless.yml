@@ -1,0 +1,134 @@
+service: example
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: staging
+  architecture: x86_64
+  runtime: provided.al2
+  environment:
+    APP_URL: ${param:appUrl}
+    APP_ENV: ${sls:stage}
+    APP_DEBUG: ${param:debug}
+    APP_SSM_PREFIX: /${self:service}-${sls:stage}/
+    APP_SSM_PARAMETERS: "APP_KEY"
+    ASSET_URL: https://${param:assetsBucket}/${sls:instanceId}
+    LOG_LEVEL: ${param:logLevel}
+    QUEUE_CONNECTION: ${param:queue, 'sqs'}
+    DYNAMODB_CACHE_TABLE: !Ref CacheTable
+    AWS_ACCOUNT_ID: ${aws:accountId}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Resource: !GetAtt CacheTable.Arn
+          Action: [dynamodb:DescribeTable, dynamodb:Query, dynamodb:Scan, dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:DeleteItem]
+        - Effect: Allow
+          Resource: !GetAtt Queue.Arn
+          Action: [sqs:GetQueueUrl, sqs:GetQueueAttributes, sqs:SendMessage, sqs:receiveMessage, sqs:DeleteMessage, sqs:PurgeQueue]
+        - Effect: Allow
+          Resource: arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/${self:service}-${sls:stage}/*
+          Action: [ssm:GetParameters]
+
+plugins:
+  - ./vendor/bref/bref
+  - serverless-scriptable-plugin
+
+params:
+  default:
+    assetsBucket: assets.example.com
+  production:
+    appUrl: https://example.com
+    debug: false
+    logLevel: info
+  staging:
+    appUrl: https://staging.example.com
+    debug: true
+    queue: null
+    logLevel: debug
+
+functions:
+  web:
+    handler: php/runtime.php
+    timeout: 20
+    environment:
+      APP_RUNTIME: octane
+      BREF_LOOP_MAX: 250
+      BREF_BINARY_RESPONSES: 1
+    layers:
+      - ${bref:layer.php-81}
+    events:
+      - httpApi: '*'
+
+  cli:
+    handler: php/runtime.php
+    timeout: 720
+    environment:
+      APP_RUNTIME: cli
+    layers:
+      - ${bref:layer.php-81}
+      - ${bref:layer.console}
+    events:
+      - schedule:
+          rate: rate(1 minute)
+          input: '"schedule:run"'
+
+  queue:
+    handler: php/runtime.php
+    timeout: 59
+    environment:
+      APP_RUNTIME: queue
+    layers:
+      - ${bref:layer.php-81}
+    events:
+      - sqs:
+          arn: !GetAtt Queue.Arn
+          batchSize: 1
+          maximumBatchingWindow: 60
+
+package:
+  patterns:
+    - '!.*/**'
+    - '!node_modules'
+    - '!public/assets'
+    - '!public/storage'
+    - '!public/vendor'
+    - 'public/vendor/**/mix-manifest.json'
+    - '!resources/css'
+    - '!resources/js'
+    - '!storage/framework'
+    - '!storage/logs'
+    - '!tests'
+    - '!composer.lock'
+    - '!package-lock.json'
+
+custom:
+  scriptable:
+    hooks:
+      after:package:createDeploymentArtifacts:
+        - aws s3 cp public/ s3://${param:assetsBucket}/${sls:instanceId}/ --recursive --only-show-errors --acl=public-read --exclude="*.php"
+      after:deploy:deploy:
+        - vendor/bin/bref cli ${self:service}-${sls:stage}-cli -- migrate --force
+
+resources:
+  Resources:
+    CacheTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${sls:stage}-cache
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: key
+            AttributeType: S
+        KeySchema:
+          - AttributeName: key
+            KeyType: HASH
+        TimeToLiveSpecification:
+          AttributeName: expires_at
+          Enabled: true
+    Queue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${sls:stage}
+        VisibilityTimeout: 70
