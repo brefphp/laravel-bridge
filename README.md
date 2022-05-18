@@ -8,7 +8,7 @@ This project is largely based on code from [PHP Runtimes](https://github.com/php
 
 Why does this exist and why not just use [Laravel Vapor](https://vapor.laravel.com)? Vapor is fantastic, easy to use and the better choice for situations, its $399/year pay for itself not having to maintain your own infrastructure.
 
-For [Relay's](https://relaycache.com) API however we needed something that 1) __is open source__ (Vapor's API is a black box), 2) __is secure__ (Vapor has admin access to databases and environment variables) and 3) doesn't leave us at the __mercy of a support team__ (Vapor has no enterprise support). We also didn't want to be forced to use CloudFront on top of Cloudflare, but that's just nerdy preference.
+For [Relay](https://relaycache.com)'s API however we needed something that 1) **is open source** _(Vapor's API is a black box)_, 2) **is secure** _(Vapor has admin access to databases and environment variables)_ and 3) doesn't leave us at the **mercy of a support team** _(Vapor has no enterprise support)_. We also didn't want to be forced to use CloudFront on top of Cloudflare, but that's just nerdy preference.
 
 We needed an open source solution that gives us more fine-grained control and is secure.
 
