@@ -22,7 +22,7 @@ class HttpHandler extends BrefHttpHandler
     public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
     {
         $request = Request::createFromBase(
-            RequestBridge::convertRequest($event, $context)
+            SymfonyRequestBridge::convertRequest($event, $context)
         );
 
         $response = $this->kernel->handle($request);

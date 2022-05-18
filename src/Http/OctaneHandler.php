@@ -16,7 +16,7 @@ class OctaneHandler extends HttpHandler
     public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
     {
         $request = Request::createFromBase(
-            RequestBridge::convertRequest($event, $context)
+            SymfonyRequestBridge::convertRequest($event, $context)
         );
 
         $response = OctaneClient::handle($request);

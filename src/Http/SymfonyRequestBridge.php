@@ -10,7 +10,7 @@ use Riverline\MultiPartParser\StreamedPart;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-class RequestBridge
+class SymfonyRequestBridge
 {
     public static function convertRequest(HttpRequestEvent $event, Context $context): Request
     {
