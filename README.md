@@ -1,17 +1,26 @@
 # Bref Laravel Bridge
 
-A better Laravel integration for Bref, including Octane support.
+An advanced Laravel integration for Bref, including Octane support.
 
-## TODOs
+This project is largely based on code from [PHP Runtimes](https://github.com/php-runtime/runtime), [Laravel Vapor](https://github.com/laravel/vapor-core) and [Bref's Laravel Bridge](https://github.com/brefphp/laravel-bridge).
 
-- [ ] Publish runtime command
-- [ ] Finish readme
-- [ ] Publish to Packagist
-- [ ] Support persistent PostgreSQL connections
+
 
 ## Installation
 
-...
+Install the package:
+
+```
+composer require cachewerk/bref-laravel-bridge
+```
+
+Publish the Bref runtime:
+
+```
+php artisan vendor:publish --tag=bref-runtime
+```
+
+By default the runtime is published to `php/runtime.php` where Bref's PHP configuration resides, feel free to move it.
 
 ## Configuration
 

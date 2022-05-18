@@ -1,10 +1,7 @@
 {
     "name": "cachewerk/bref-laravel-bridge",
-    "description": "A better Laravel integration for Bref, including Octane support.",
-    "keywords": [
-       "laravel",
-       "bref"
-    ],
+    "description": "An advanced Laravel integration for Bref, including Octane support.",
+    "keywords": ["laravel", "bref"],
     "homepage": "https://github.com/cachewerk/bref-laravel-bridge",
     "license": "MIT",
     "require": {

@@ -40,4 +40,16 @@ class BrefServiceProvider extends ServiceProvider
 
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
     }
+
+    /**
+     * Bootstrap package services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        $this->publishes([
+            __DIR__ . '/../stubs/runtime.php' => base_path('php/runtime.php'),
+        ], 'bref-runtime');
+    }
 }
