@@ -18,66 +18,41 @@ So we built this.
 
 ## Installation
 
-Install the package:
+First, be sure to make yourself familiar with Bref and [its Laravel bridge](https://bref.sh/docs/frameworks/laravel.html).
+
+Next, install the package and publish the custom Bref runtime:
 
 ```
 composer require cachewerk/bref-laravel-bridge
-```
 
-Publish the Bref runtime:
-
-```
 php artisan vendor:publish --tag=bref-runtime
 ```
 
 By default the runtime is published to `php/runtime.php` where Bref's PHP configuration resides, feel free to move it.
 
-## Configuration
+Next, we need to set up in the `AWS_ACCOUNT_ID` environment variable in your `serverless.yml`:
 
 ```yml
 provider:
   environment:
     AWS_ACCOUNT_ID: ${aws:accountId}
-    APP_SSM_PREFIX: /example-${sls:stage}/
-    APP_SSM_PARAMETERS: "APP_KEY, DATABASE_URL"
-
-plugins:
-  - ./vendor/bref/bref  
 ```
 
-### Web
+Then set up your functions:
 
 ```yml
 functions:
   web:
     handler: php/runtime.php
     environment:
-      BREF_BINARY_RESPONSES: 1 # optional
+      APP_RUNTIME: octane       # omit to not use Octane
+      BREF_LOOP_MAX: 250        # omit to not use Octane
+      BREF_BINARY_RESPONSES: 1  # optional
     layers:
       - ${bref:layer.php-81}
     events:
       - httpApi: '*'
-```
 
-### Octane
-```yml
-functions:
-  web:
-    handler: php/runtime.php
-    environment:
-      APP_RUNTIME: octane
-      BREF_LOOP_MAX: 250
-      BREF_BINARY_RESPONSES: 1 # optional
-    layers:
-      - ${bref:layer.php-81}
-    events:
-      - httpApi: '*'
-```
-
-### Queue
-
-```yml
-functions:
   queue:
     handler: php/runtime.php
     timeout: 59
@@ -90,12 +65,7 @@ functions:
           arn: !GetAtt Queue.Arn
           batchSize: 1
           maximumBatchingWindow: 60
-```
 
-### Console
-
-```yml
-functions:
   cli:
     handler: php/runtime.php
     timeout: 720
@@ -108,4 +78,36 @@ functions:
       - schedule:
           rate: rate(1 minute)
           input: '"schedule:run"'
+```
+
+## Configuration
+
+### Parameter Store secrets
+
+To avoid setting secrets as environment variables on your Lambda functions, you can inject them directly into the Lambda runtime:
+
+```yml
+provider:
+  environment:
+    APP_SSM_PREFIX: /example-${sls:stage}/
+    APP_SSM_PARAMETERS: "APP_KEY, DATABASE_URL"
+```
+
+### Log context
+
+If you want to add the Lambda request UUID to your shared log context, set it when binding the request instance.
+
+```php
+class AppServiceProvider extends ServiceProvider
+{
+    public function register()
+    {
+        $this->app->rebinding('request', function ($app, $request) {
+            $request->hasHeader('X-Request-ID') &&
+                $app->make('log')->shareContext([
+                    'requestId' => $request->header('X-Request-ID'),
+                ]);
+        });
+    }
+}
 ```
