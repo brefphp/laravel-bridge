@@ -23,6 +23,12 @@ class BrefServiceProvider extends ServiceProvider
 
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
+        $this->app->rebinding('request', function ($app, $request) {
+            $app->make('log')->shareContext([
+                'requestId' => $request->header('X-Request-ID'),
+            ]);
+        });
+
         $account = env('AWS_ACCOUNT_ID');
         $region = env('AWS_REGION', env('AWS_DEFAULT_REGION', 'us-east-1'));
 

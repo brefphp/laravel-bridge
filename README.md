@@ -92,22 +92,3 @@ provider:
     APP_SSM_PREFIX: /example-${sls:stage}/
     APP_SSM_PARAMETERS: "APP_KEY, DATABASE_URL"
 ```
-
-### Log context
-
-If you want to add the Lambda request UUID to your shared log context, set it when binding the request instance.
-
-```php
-class AppServiceProvider extends ServiceProvider
-{
-    public function register()
-    {
-        $this->app->rebinding('request', function ($app, $request) {
-            $request->hasHeader('X-Request-ID') &&
-                $app->make('log')->shareContext([
-                    'requestId' => $request->header('X-Request-ID'),
-                ]);
-        });
-    }
-}
-```
