@@ -45,6 +45,10 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('cache.stores.dynamodb.secret');
         Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
 
+        Config::set('filesystems.disks.s3.key');
+        Config::set('filesystems.disks.s3.secret');
+        Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
+
         Config::set('queue.connections.sqs.key');
         Config::set('queue.connections.sqs.secret');
         Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
@@ -52,6 +56,10 @@ class BrefServiceProvider extends ServiceProvider
 
         if (Config::get('session.driver') === 'file') {
             Config::set('session.driver', 'cookie');
+        }
+
+        if (Config::get('filesystems.default') === 'local') {
+            Config::set('filesystems.default', 's3');
         }
 
         if (Config::get('logging.default') === 'stack') {
