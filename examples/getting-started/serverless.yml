@@ -25,11 +25,13 @@ provider:
     APP_DEBUG: ${param:debug}
     APP_SSM_PREFIX: /${self:service}-${sls:stage}/
     APP_SSM_PARAMETERS: "APP_KEY"
+    AWS_ACCOUNT_ID: ${aws:accountId}
     ASSET_URL: https://${param:assetsBucket}/${sls:instanceId}
     LOG_LEVEL: ${param:logLevel}
     QUEUE_CONNECTION: ${param:queue, 'sqs'}
-    DYNAMODB_CACHE_TABLE: !Ref CacheTable
-    AWS_ACCOUNT_ID: ${aws:accountId}
+    SQS_QUEUE: ${self:service}-${sls:stage}
+    DYNAMODB_CACHE_TABLE: ${self:service}-${sls:stage}-cache
+    MAINTENANCE_MODE: ${param:maintenance, null}
   iam:
     role:
       statements:

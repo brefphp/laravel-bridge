@@ -123,3 +123,52 @@ functions:
     environment:
       BREF_BINARY_RESPONSES: 1
 ```
+
+## Usage
+
+### Artisan Console
+
+Just like with Bref, you may [execute console commands](https://bref.sh/docs/runtimes/console.html).
+
+```
+vendor/bin/bref cli <service>-<stage>-cli -- route:list
+
+vendor/bin/bref cli example-staging-cli -- route:list
+```
+
+### Maintenance mode
+
+Similar to the `php artisan down` command, you may put your app into maintenance mode. All that's required is setting the `MAINTENANCE_MODE` environment variable:
+
+```yml
+provider:
+  environment:
+    MAINTENANCE_MODE: ${param:maintenance, null}
+```
+
+You can then quickly put all functions into maintenance without running a full build and CloudFormation deploy:
+
+```
+serverless deploy function --function=web --update-config --param="maintenance=1"
+serverless deploy function --function=cli --update-config --param="maintenance=1"
+serverless deploy function --function=queue --update-config --param="maintenance=1"
+```
+
+To take your app out of maintenance mode, simply omit the parameter: 
+
+```
+serverless deploy function --function=web --update-config
+serverless deploy function --function=cli --update-config
+serverless deploy function --function=queue --update-config
+```
+
+One caveat with the `--update-config` flag is that it doesn't objects in `environment` variables in the `serverless.yml`:
+
+```yml
+provider:
+  environment:
+    SQS_QUEUE: ${self:service}-${sls:stage}    # good
+    SQS_QUEUE: !Ref QueueName                  # bad
+    SQS_QUEUE:                                 # bad
+      Ref: QueueName
+```

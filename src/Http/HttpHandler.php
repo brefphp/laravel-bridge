@@ -2,6 +2,8 @@
 
 namespace CacheWerk\BrefLaravelBridge\Http;
 
+use CacheWerk\BrefLaravelBridge\MaintenanceMode;
+
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Http\Kernel;
 
@@ -35,7 +37,11 @@ class HttpHandler extends BrefHttpHandler
             SymfonyRequestBridge::convertRequest($event, $context)
         );
 
-        $response = $this->kernel->handle($request);
+        if (MaintenanceMode::active()) {
+            $response = MaintenanceMode::response($request);
+        } else {
+            $response = $this->kernel->handle($request);
+        }
 
         $this->kernel->terminate($request, $response);
 
@@ -48,4 +54,3 @@ class HttpHandler extends BrefHttpHandler
         );
     }
 }
-

@@ -1,6 +1,7 @@
 <?php
 
 use CacheWerk\BrefLaravelBridge\Secrets;
+use CacheWerk\BrefLaravelBridge\MaintenanceMode;
 use CacheWerk\BrefLaravelBridge\Http\HttpHandler;
 use CacheWerk\BrefLaravelBridge\Http\OctaneHandler;
 use CacheWerk\BrefLaravelBridge\Queue\QueueHandler;
@@ -33,6 +34,8 @@ $app = require __DIR__ . '/../bootstrap/app.php';
 $app->useStoragePath(StorageDirectories::Path);
 
 if ($runtime === 'cli') {
+    MaintenanceMode::setUp();
+
     $kernel = $app->make(ConsoleKernel::class);
     $status = $kernel->handle($input = new ArgvInput, new ConsoleOutput);
     $kernel->terminate($input, $status);
@@ -41,6 +44,8 @@ if ($runtime === 'cli') {
 }
 
 if ($runtime === 'queue') {
+    MaintenanceMode::setUp();
+
     $app->make(ConsoleKernel::class)->bootstrap();
     $config = $app->make('config');
 
