@@ -124,6 +124,28 @@ functions:
       BREF_BINARY_RESPONSES: 1
 ```
 
+### Persistent database sessions
+
+If you're using PostgreSQL 9.6 or newer, you can take advantage of persistent database sessions.
+
+First set [`idle_in_transaction_session_timeout`](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-IDLE-IN-TRANSACTION-SESSION-TIMEOUT) either in your RDS database's parameter group, or on a specific database itself.
+
+```sql
+ALTER DATABASE SET idle_in_transaction_session_timeout = '10000' -- 10 seconds in ms
+```
+
+Lastly, set the `OCTANE_PERSIST_DATABASE_SESSIONS` environment variable.
+
+```yml
+functions:
+  web:
+    handler: php/runtime.php
+    environment:
+      APP_RUNTIME: octane
+      BREF_LOOP_MAX: 250
+      OCTANE_PERSIST_DATABASE_SESSIONS: 1
+```
+
 ## Usage
 
 ### Artisan Console

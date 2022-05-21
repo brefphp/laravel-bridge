@@ -35,13 +35,16 @@ class OctaneClient implements Client
      * Boots an Octane worker instance.
      *
      * @param  string  $basePath
+     * @param  bool  $persistDatabaseSession
      * @return void
      */
-    public static function boot(string $basePath)
+    public static function boot(string $basePath, bool $persistDatabaseSession)
     {
         static::$worker = tap(
             new Worker(new ApplicationFactory($basePath), new self)
-        )->boot();
+        )->boot()->onRequestHandled(
+            static::manageDatabaseSessions($persistDatabaseSession)
+        );
     }
 
     /**
@@ -95,5 +98,26 @@ class OctaneClient implements Client
     public function marshalRequest(RequestContext $context): array
     {
         //
+    }
+
+    /**
+     * Manage the database sessions.
+     *
+     * @param  bool  $persistDatabaseSession
+     * @return callable
+     */
+    protected static function manageDatabaseSessions(bool $persistDatabaseSession)
+    {
+        return function ($request, $response, $sandbox) use ($persistDatabaseSession) {
+            if ($persistDatabaseSession) {
+                return;
+            }
+
+            if (! $sandbox->resolved('db')) {
+                return;
+            }
+
+            collect($sandbox->make('db')->getConnections())->each->disconnect();
+        };
     }
 }

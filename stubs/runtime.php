@@ -63,7 +63,10 @@ if (! $configIsCached) {
 }
 
 if ($runtime === 'octane') {
-    OctaneClient::boot(realpath(__DIR__ . '/..'));
+    OctaneClient::boot(
+        realpath(__DIR__ . '/..'),
+        (bool) ($_ENV['OCTANE_PERSIST_DATABASE_SESSIONS'] ?? false)
+    );
 
     return new OctaneHandler($app);
 }
