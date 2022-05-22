@@ -105,10 +105,7 @@ class QueueHandler extends SqsHandler
      */
     protected function raiseBeforeJobEvent(string $connectionName, SqsJob $job): void
     {
-        $this->events->dispatch(new JobProcessing(
-            $connectionName,
-            $job
-        ));
+        $this->events->dispatch(new JobProcessing($connectionName, $job));
     }
 
     /**
@@ -116,21 +113,14 @@ class QueueHandler extends SqsHandler
      */
     protected function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
     {
-        $this->events->dispatch(new JobProcessed(
-            $connectionName,
-            $job
-        ));
+        $this->events->dispatch(new JobProcessed($connectionName, $job));
     }
 
     /**
      * @see \Illuminate\Queue\Worker::raiseExceptionOccurredJobEvent()
      */
-    protected function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $e): void
+    protected function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $th): void
     {
-        $this->events->dispatch(new JobExceptionOccurred(
-            $connectionName,
-            $job,
-            $e
-        ));
+        $this->events->dispatch(new JobExceptionOccurred($connectionName, $job, $th));
     }
 }
