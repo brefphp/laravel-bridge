@@ -1,0 +1,73 @@
+name: Maintenance mode
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        type: choice
+        required: true
+        options:
+         - staging
+         - production
+      maintenance:
+        description: 'Maintenance mode'
+        type: choice
+        options:
+         - enable
+         - disable
+
+concurrency: deploy-${{ github.event.inputs.environment || 'staging' }}
+
+jobs:
+  deploy:
+    name: Toggle maintenance mode
+    runs-on: ubuntu-latest
+
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment || 'staging' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
+
+      - name: Install Serverless CLI
+        run: |
+          npm install -g \
+            serverless \
+            serverless-scriptable-plugin \
+            serverless-plugin-git-variables
+          serverless config credentials \
+            --provider aws \
+            --key ${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --secret="${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+
+      - name: Enable maintenance mode
+        if: ${{ github.event.inputs.maintenance == 'enable' }}
+        run: |
+          for function in web cli queue; do
+            serverless deploy function --update-config \
+              --aws-profile=default \
+              --stage=$ENVIRONMENT \
+              --function=$function \
+              --param="maintenance=1"
+          done
+
+      - name: Disable maintenance mode
+        if: ${{ github.event.inputs.maintenance == 'disable' }}
+        run: |
+          for function in web cli queue; do
+            serverless deploy function --update-config \
+              --aws-profile=default \
+              --stage=$ENVIRONMENT \
+              --function=$function
+          done

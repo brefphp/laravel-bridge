@@ -12,7 +12,7 @@ The [`getting-started`](getting-started/) example contains a `serverless.yml` th
 
 Be sure to adjust the `service` name and `params`.
 
-It also includes a GitHub Actions workflow to deploy the app. The actions must have the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets set.
+It also includes a GitHub Actions workflow to deploy the app and toggle maintenance mode. The actions require the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` secrets to be set.
 
 ## Relay
 
