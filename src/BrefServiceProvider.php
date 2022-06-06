@@ -2,6 +2,7 @@
 
 namespace Bref\LaravelBridge;
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use RuntimeException;
@@ -28,6 +29,16 @@ class BrefServiceProvider extends ServiceProvider
             // and will fail with an error
             if (! mkdir($compiledViewDirectory, 0755, true) && ! is_dir($compiledViewDirectory)) {
                 throw new RuntimeException(sprintf('Directory "%s" cannot be created', $compiledViewDirectory));
+            }
+        }
+
+        // If we are running Octane Commands
+        if ($this->app->runningInConsole() && Str::contains(data_get($_SERVER, 'argv.1'), 'octane')) {
+            $octaneTmpFolder = '/tmp/octane';
+            if (! is_dir($octaneTmpFolder)) {
+                if (! mkdir($octaneTmpFolder, 0755, true) && ! is_dir($octaneTmpFolder)) {
+                    throw new RuntimeException(sprintf('Directory "%s" cannot be created', $octaneTmpFolder));
+                }
             }
         }
 
@@ -78,5 +89,8 @@ class BrefServiceProvider extends ServiceProvider
         // to avoid errors. If you want to actively use the cache, it will be best to use
         // the dynamodb driver instead.
         Config::set('cache.stores.file.path', '/tmp/storage/framework/cache');
+
+        // Store octane server state file in /tmp/octane
+        Config::set('octane.state_file', '/tmp/octane/octane-server-state.json');
     }
 }
