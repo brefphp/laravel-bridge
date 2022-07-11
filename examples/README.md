@@ -16,6 +16,6 @@ It also includes a GitHub Actions workflow to deploy the app and toggle maintena
 
 ## Relay
 
-We like to be transparent on how we're using this package ourselves, so we published the configuration that manages [relaycache.com](https://relaycache.com).
+We like to be transparent on how we're using this package ourselves, so we published the configuration that manages [relay.so](https://relay.so).
 
 __TODO...__
