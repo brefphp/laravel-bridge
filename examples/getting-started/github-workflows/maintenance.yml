@@ -8,14 +8,14 @@ on:
         type: choice
         required: true
         options:
-         - staging
-         - production
+          - staging
+          - production
       maintenance:
         description: 'Maintenance mode'
         type: choice
         options:
-         - enable
-         - disable
+          - enable
+          - disable
 
 concurrency: deploy-${{ github.event.inputs.environment || 'staging' }}
 
