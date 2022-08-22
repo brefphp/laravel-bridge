@@ -8,8 +8,8 @@ on:
         type: choice
         required: true
         options:
-         - staging
-         - production
+          - staging
+          - production
 
 concurrency: deploy-${{ github.event.inputs.environment }}
 
