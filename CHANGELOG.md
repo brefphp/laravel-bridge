@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added maintenance mode support ([#7](https://github.com/cachewerk/bref-laravel-bridge/pull/7))
 - Support persistent PostgresSQL sessions with Octane ([#9](https://github.com/cachewerk/bref-laravel-bridge/pull/9))
+- Parse `Authorization: Basic` header into `PHP_AUTH_*` variables ([#9](https://github.com/cachewerk/bref-laravel-bridge/pull/10))
 
 ### Changed 
 - Made `ServeStaticAssets` configurable ([19fb1ac](19fb1ac21fd7245a8bd529eb6325cea2308ffbf2))

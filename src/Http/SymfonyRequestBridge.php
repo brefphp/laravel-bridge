@@ -22,9 +22,13 @@ class SymfonyRequestBridge
      */
     public static function convertRequest(HttpRequestEvent $event, Context $context): Request
     {
+        $headers = $event->getHeaders();
+
+        [$user, $password] = self::parseBasicAuthorization($headers);
+
         $server = array_filter([
-            'AUTH_TYPE' => $event->getHeaders()['auth-type'] ?? null,
-            'CONTENT_LENGTH' => $event->getHeaders()['content-length'][0] ?? null,
+            'AUTH_TYPE' => $headers['auth-type'] ?? null,
+            'CONTENT_LENGTH' => $headers['content-length'][0] ?? null,
             'CONTENT_TYPE' => $event->getContentType(),
             'DOCUMENT_ROOT' => getcwd(),
             'GATEWAY_INTERFACE' => 'FastCGI/1.0',
@@ -45,9 +49,11 @@ class SymfonyRequestBridge
             'LAMBDA_REQUEST_CONTEXT' => json_encode($event->getRequestContext()),
             'HTTP_X_SOURCE_IP' => $event->getSourceIp(),
             'HTTP_X_REQUEST_ID' => $context->getAwsRequestId(),
-        ], fn ($value) => null !== $value);
+            'PHP_AUTH_USER' => $user,
+            'PHP_AUTH_PW' => $password,
+        ], fn ($value) => ! is_null($value));
 
-        foreach ($event->getHeaders() as $name => $values) {
+        foreach ($headers as $name => $values) {
             $server['HTTP_' . strtoupper(str_replace('-', '_', $name))] = $values[0];
         }
 
@@ -161,5 +167,32 @@ class SymfonyRequestBridge
         }
 
         $pointer = $value;
+    }
+
+    /**
+     * Parse the username and password from the `Authorization` header.
+     * Only "Basic" is supported.
+     *
+     * @param  array  $headers
+     * @return string[]|null[]
+     */
+    protected static function parseBasicAuthorization(array $headers)
+    {
+        $authorization = trim($headers['authorization'] ?? '');
+
+        if (! str_starts_with($authorization, 'Basic ')) {
+            return [null, null];
+        }
+
+        $auth = base64_decode(trim(explode(' ', $authorization)[1]));
+
+        if (! $auth || ! strpos($auth, ':')) {
+            return [null, null];
+        }
+
+        return [
+            strstr($auth, ':', true),
+            substr(strstr($auth, ':'), 1),
+        ];
     }
 }
