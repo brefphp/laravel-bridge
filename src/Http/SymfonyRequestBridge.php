@@ -178,7 +178,7 @@ class SymfonyRequestBridge
      */
     protected static function parseBasicAuthorization(array $headers)
     {
-        $authorization = trim($headers['authorization'] ?? '');
+        $authorization = trim($headers['authorization'][0] ?? '');
 
         if (! str_starts_with($authorization, 'Basic ')) {
             return [null, null];
