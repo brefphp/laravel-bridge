@@ -29,6 +29,10 @@ class OctaneHandler extends HttpHandler
             $response = OctaneClient::handle($request);
         }
 
+        if (! $response->headers->has('Content-Type')) {
+            $response->prepare($request);
+        }
+
         return new HttpResponse(
             $response->getContent(),
             $response->headers->all(),
