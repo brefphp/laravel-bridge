@@ -25,16 +25,16 @@ class Secrets
             'WithDecryption' => true,
         ]);
 
+        $injected = [];
+
         foreach ($response['Parameters'] ?? [] as $secret) {
             $key = trim(strrchr($secret['Name'], '/'), '/');
-
-            fwrite(STDERR, sprintf(
-                '%s: %s' . PHP_EOL,
-                isset($_ENV[$key]) ? 'Overwriting runtime secret' : 'Injecting runtime secret',
-                $key
-            ));
-
+            $injected[] = isset($_ENV[$key]) ? "{$key} (overwritten)" : $key;
             $_ENV[$key] = $secret['Value'];
+        }
+
+        if (! empty($injected)) {
+            fwrite(STDERR, 'Injected runtime secrets: ' . implode(', ', $injected) . PHP_EOL);
         }
     }
 }

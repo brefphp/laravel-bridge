@@ -4,6 +4,7 @@ namespace CacheWerk\BrefLaravelBridge;
 
 use Monolog\Formatter\JsonFormatter;
 
+use Illuminate\Log\LogManager;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
@@ -85,7 +86,7 @@ class BrefServiceProvider extends ServiceProvider
 
         $this->app->rebinding('request', function ($app, $request) {
             if ($request->hasHeader('X-Request-ID')) {
-                $app->make('log')->shareContext([
+                $app->make(LogManager::class)->shareContext([
                     'requestId' => $request->header('X-Request-ID'),
                 ]);
             }

@@ -13,6 +13,8 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
+use Illuminate\Log\LogManager;
+
 use Illuminate\Queue\SqsQueue;
 use Illuminate\Queue\Jobs\SqsJob;
 use Illuminate\Queue\QueueManager;
@@ -39,7 +41,7 @@ class QueueHandler extends SqsHandler
         protected string $connection,
         protected string $queue,
     ) {
-        $queue = $container->get(QueueManager::class)
+        $queue = $container->make(QueueManager::class)
             ->connection($connection);
 
         if (! $queue instanceof SqsQueue) {
@@ -105,6 +107,9 @@ class QueueHandler extends SqsHandler
      */
     protected function raiseBeforeJobEvent(string $connectionName, SqsJob $job): void
     {
+        $this->container->make(LogManager::class)
+            ->info("Processing job {$job->getJobId()}", ['name' => $job->resolveName()]);
+
         $this->events->dispatch(new JobProcessing($connectionName, $job));
     }
 
@@ -113,6 +118,9 @@ class QueueHandler extends SqsHandler
      */
     protected function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
     {
+        $this->container->make(LogManager::class)
+            ->info("Processed job {$job->getJobId()}", ['name' => $job->resolveName()]);
+
         $this->events->dispatch(new JobProcessed($connectionName, $job));
     }
 
@@ -121,6 +129,9 @@ class QueueHandler extends SqsHandler
      */
     protected function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $th): void
     {
+        $this->container->make(LogManager::class)
+            ->error("Job failed {$job->getJobId()}", ['name' => $job->resolveName()]);
+
         $this->events->dispatch(new JobExceptionOccurred($connectionName, $job, $th));
     }
 }
