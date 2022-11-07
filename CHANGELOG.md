@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.2.0] - 2022-11-07
 ### Added
 - Added maintenance mode support ([#7](https://github.com/cachewerk/bref-laravel-bridge/pull/7))
 - Support persistent PostgresSQL sessions with Octane ([#9](https://github.com/cachewerk/bref-laravel-bridge/pull/9))
@@ -21,5 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release
 
-[Unreleased]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/cachewerk/bref-laravel-bridge/releases/tag/v0.1.0
