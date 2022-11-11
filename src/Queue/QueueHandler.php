@@ -2,28 +2,41 @@
 
 namespace CacheWerk\BrefLaravelBridge\Queue;
 
-use Throwable;
 use RuntimeException;
+
+use Aws\Sqs\SqsClient;
 
 use Bref\Context\Context;
 use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
-
-use Illuminate\Container\Container;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Debug\ExceptionHandler;
-
-use Illuminate\Log\LogManager;
+use Bref\Event\Sqs\SqsRecord;
 
 use Illuminate\Queue\SqsQueue;
 use Illuminate\Queue\Jobs\SqsJob;
 use Illuminate\Queue\QueueManager;
-use Illuminate\Queue\Events\JobProcessed;
-use Illuminate\Queue\Events\JobProcessing;
-use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\WorkerOptions;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+
+use CacheWerk\BrefLaravelBridge\MaintenanceMode;
 
 class QueueHandler extends SqsHandler
 {
+    /**
+     * The AWS SQS client.
+     *
+     * @var \Aws\Sqs\SqsClient
+     */
+    protected SqsClient $sqs;
+
+    /**
+     * Number of seconds before Lambda invocation deadline to timeout the job.
+     *
+     * @var float
+     */
+    protected const JOB_TIMEOUT_SAFETY_MARGIN = 1.0;
+
     /**
      * Creates a new SQS queue handler instance.
      *
@@ -60,78 +73,85 @@ class QueueHandler extends SqsHandler
      */
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        $worker = $this->container->makeWith(Worker::class, [
+            'isDownForMaintenance' => fn () => MaintenanceMode::active(),
+        ]);
+
         foreach ($event->getRecords() as $sqsRecord) {
-            $recordData = $sqsRecord->toArray();
+            $timeout = $this->calculateJobTimeout($context->getRemainingTimeInMillis());
 
-            $jobData = [
-                'MessageId' => $recordData['messageId'],
-                'ReceiptHandle' => $recordData['receiptHandle'],
-                'Attributes' => $recordData['attributes'],
-                'Body' => $recordData['body'],
-            ];
-
-            $job = new SqsJob(
-                $this->container,
-                $this->sqs,
-                $jobData,
+            $worker->runSqsJob(
+                $job = $this->marshalJob($sqsRecord),
                 $this->connection,
-                $this->queue,
+                $this->gatherWorkerOptions($timeout),
             );
 
-            $this->process($this->connection, $job);
+            if (! $job->hasFailed() && ! $job->isDeleted()) {
+                $job->delete();
+            }
         }
     }
 
     /**
-     * @see \Illuminate\Queue\Worker::process()
+     * Marshal the job with the given Bref SQS record.
+     *
+     * @param  \Bref\Event\Sqs\SqsRecord  $sqsRecord
+     * @return \Illuminate\Queue\Jobs\SqsJob
      */
-    protected function process(string $connectionName, SqsJob $job): void
+    protected function marshalJob(SqsRecord $sqsRecord): SqsJob
     {
-        try {
-            $this->raiseBeforeJobEvent($connectionName, $job);
+        $message = [
+            'MessageId' => $sqsRecord->getMessageId(),
+            'ReceiptHandle' => $sqsRecord->getReceiptHandle(),
+            'Body' => $sqsRecord->getBody(),
+            'Attributes' => $sqsRecord->toArray()['attributes'],
+            'MessageAttributes' => $sqsRecord->getMessageAttributes(),
+        ];
 
-            $job->fire();
+        return new SqsJob(
+            $this->container,
+            $this->sqs,
+            $message,
+            $this->connection,
+            $this->queue,
+        );
+    }
 
-            $this->raiseAfterJobEvent($connectionName, $job);
-        } catch (Throwable $exception) {
-            $this->raiseExceptionOccurredJobEvent($connectionName, $job, $exception);
+    /**
+     * Gather all of the queue worker options as a single object.
+     *
+     * @param  int  $timeout
+     * @return \Illuminate\Queue\WorkerOptions
+     */
+    protected function gatherWorkerOptions(int $timeout): WorkerOptions
+    {
+        $options = [
+            0, // backoff
+            512, // memory
+            $timeout, // timeout
+            0, // sleep
+            3, // maxTries
+            false, // force
+            false, // stopWhenEmpty
+            0, // maxJobs
+            0, // maxTime
+        ];
 
-            $this->exceptions->report($exception);
-
-            throw $exception;
+        if (property_exists(WorkerOptions::class, 'name')) {
+            $options = array_merge(['default'], $options);
         }
+
+        return new WorkerOptions(...$options);
     }
 
     /**
-     * @see \Illuminate\Queue\Worker::raiseBeforeJobEvent()
+     * Calculate the timeout for a job
+     *
+     * @param  int  $remainingInvocationTimeInMs
+     * @return int
      */
-    protected function raiseBeforeJobEvent(string $connectionName, SqsJob $job): void
+    protected function calculateJobTimeout(int $remainingInvocationTimeInMs): int
     {
-        $this->container->make(LogManager::class)
-            ->info("Processing job {$job->getJobId()}", ['name' => $job->resolveName()]);
-
-        $this->events->dispatch(new JobProcessing($connectionName, $job));
-    }
-
-    /**
-     * @see \Illuminate\Queue\Worker::raiseAfterJobEvent()
-     */
-    protected function raiseAfterJobEvent(string $connectionName, SqsJob $job): void
-    {
-        $this->container->make(LogManager::class)
-            ->info("Processed job {$job->getJobId()}", ['name' => $job->resolveName()]);
-
-        $this->events->dispatch(new JobProcessed($connectionName, $job));
-    }
-
-    /**
-     * @see \Illuminate\Queue\Worker::raiseExceptionOccurredJobEvent()
-     */
-    protected function raiseExceptionOccurredJobEvent(string $connectionName, SqsJob $job, Throwable $th): void
-    {
-        $this->container->make(LogManager::class)
-            ->error("Job failed {$job->getJobId()}", ['name' => $job->resolveName()]);
-
-        $this->events->dispatch(new JobExceptionOccurred($connectionName, $job, $th));
+        return max((int) (($remainingInvocationTimeInMs - self::JOB_TIMEOUT_SAFETY_MARGIN) / 1000), 0);
     }
 }
