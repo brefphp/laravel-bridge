@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [v0.3.0] - 2022-11-15
 ### Changed
 - Use Laravel-native queue handler ([#13](https://github.com/cachewerk/bref-laravel-bridge/pull/13))
 
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release
 
-[Unreleased]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/cachewerk/bref-laravel-bridge/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/cachewerk/bref-laravel-bridge/releases/tag/v0.1.0
