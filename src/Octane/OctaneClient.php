@@ -12,6 +12,7 @@ use Laravel\Octane\ApplicationFactory;
 
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 
 use Symfony\Component\HttpFoundation\Response;
 
