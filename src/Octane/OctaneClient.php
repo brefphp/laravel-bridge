@@ -28,7 +28,7 @@ class OctaneClient implements Client
     /**
      * The Octane response.
      *
-     * @var \Laravel\Octane\OctaneResponse
+     * @var \Laravel\Octane\OctaneResponse|null
      */
     protected static $response;
 
