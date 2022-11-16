@@ -1,0 +1,169 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow
+
+name: "Tests"
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request: null
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+
+  byte_level:
+    name: "Byte-level"
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v3"
+
+      - name: "Check file permissions"
+        run: |
+          test "$(find . -type f -not -path './.git/*' -executable)" = ""
+
+      - name: "Find non-printable ASCII characters"
+        run: |
+          ! LC_ALL=C.UTF-8 find . -type f -name '*.php' -print0 | xargs -0 -- grep -PHn '[^ -~]'
+
+  syntax_errors:
+    name: "Syntax errors"
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Set up PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.0"
+          coverage: "none"
+
+      - name: "Checkout code"
+        uses: "actions/checkout@v3"
+
+      - name: "Install dependencies"
+        uses: "ramsey/composer-install@v2"
+        with:
+          dependency-versions: "highest"
+
+      - name: "Check source code for syntax errors"
+        run: "composer exec -- parallel-lint src/ config/ stubs/"
+
+  unit_tests:
+    name: "Unit and functional tests"
+    needs:
+      - "byte_level"
+      - "syntax_errors"
+    strategy:
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+          - "8.2"
+        dependencies:
+          - "lowest"
+          - "highest"
+    runs-on: "ubuntu-20.04"
+
+    steps:
+      - name: "Set up PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+
+      - name: "Checkout code"
+        uses: "actions/checkout@v3"
+
+      - name: "Install dependencies"
+        uses: "ramsey/composer-install@v2"
+        with:
+          dependency-versions: "${{ matrix.dependencies }}"
+
+      - name: "Execute unit tests"
+        run: "composer exec -- phpunit -v || true"
+
+  static_analysis:
+    name: "Static Analysis"
+    needs:
+      - "byte_level"
+      - "syntax_errors"
+    runs-on: "ubuntu-20.04"
+
+    steps:
+      - name: "Set up PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.0"
+          coverage: "none"
+
+      - name: "Checkout code"
+        uses: "actions/checkout@v3"
+
+      - name: "Check JSON files"
+        run: |
+          find . -type f -name '*.json' | xargs -t -L 1 -- php -r 'json_decode(file_get_contents($argv[1]), null, 512, JSON_THROW_ON_ERROR);'
+
+      - name: "Validate Composer configuration"
+        run: "composer validate --strict"
+
+      - name: "Install dependencies"
+        uses: "ramsey/composer-install@v2"
+        with:
+          dependency-versions: "highest"
+
+      - name: "Check PSR-4 mapping"
+        run: "composer dump-autoload --optimize --strict-psr"
+
+      - name: "Perform static analysis"
+        run: "composer exec -- phpstan analyze -c vendor/nunomaduro/larastan/extension.neon -l 5 src/ stubs/"
+
+  coding_standards:
+    name: "Coding Standards"
+    needs:
+      - "byte_level"
+      - "syntax_errors"
+    runs-on: "ubuntu-20.04"
+
+    steps:
+      - name: "Set up PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.0"
+          coverage: "none"
+
+      - name: "Checkout code"
+        uses: "actions/checkout@v3"
+
+      - name: "Check EditorConfig configuration"
+        run: "test -f .editorconfig"
+
+      - name: "Check adherence to EditorConfig"
+        uses: "greut/eclint-action@v0"
+
+      - name: "Install dependencies"
+        uses: "ramsey/composer-install@v2"
+        with:
+          dependency-versions: "highest"
+
+      - name: "Check coding style"
+        run: "composer exec -- phpcs -s src/ stubs/"
+
+  exported_files:
+    name: "Exported files"
+    needs:
+      - "byte_level"
+      - "syntax_errors"
+    runs-on: "ubuntu-20.04"
+
+    steps:
+      - name: "Checkout code"
+        uses: "actions/checkout@v3"
+
+      - name: "Check exported files"
+        run: |
+          EXPECTED="LICENSE,README.md,composer.json"
+          CURRENT="$(git archive HEAD | tar --list --exclude="src" --exclude="src/*" --exclude="config" --exclude="config/*" --exclude="stubs" --exclude="stubs/*" | paste --serial --delimiters=",")"
+          echo "CURRENT =${CURRENT}"
+          echo "EXPECTED=${EXPECTED}"
+          test "${CURRENT}" = "${EXPECTED}"
