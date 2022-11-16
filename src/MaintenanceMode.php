@@ -38,7 +38,7 @@ class MaintenanceMode
     /**
      * Returns the maintenance mode response.
      *
-     * @param \Illuminate\Http\Response  $request
+     * @param \Illuminate\Http\Request  $request
      * @return \Symfony\Component\HttpFoundation\Response
      */
     public static function response(Request $request)
