@@ -16,6 +16,10 @@ use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 
 require __DIR__ . '/../vendor/autoload.php';
 
+if (! defined('STDERR')) {
+    define('STDERR', fopen('php://stderr', 'wb'));
+}
+
 StorageDirectories::create();
 
 $runtime = $_ENV['APP_RUNTIME'] ?? null;
