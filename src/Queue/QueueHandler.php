@@ -12,7 +12,6 @@ use Bref\Event\Sqs\SqsHandler;
 use Bref\Event\Sqs\SqsRecord;
 
 use Illuminate\Queue\SqsQueue;
-use Illuminate\Queue\Jobs\SqsJob;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\WorkerOptions;
 use Illuminate\Container\Container;
@@ -96,7 +95,7 @@ class QueueHandler extends SqsHandler
      * Marshal the job with the given Bref SQS record.
      *
      * @param  \Bref\Event\Sqs\SqsRecord  $sqsRecord
-     * @return \Illuminate\Queue\Jobs\SqsJob
+     * @return \CacheWerk\BrefLaravelBridge\Queue\SqsJob
      */
     protected function marshalJob(SqsRecord $sqsRecord): SqsJob
     {
