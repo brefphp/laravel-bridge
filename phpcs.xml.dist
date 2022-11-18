@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <ruleset name="CacheWerk" namespace="CacheWerk\BrefLaravelBridge">
-    <rule ref="PSR1">
-        <exclude name="Generic.NamingConventions.UpperCaseConstantName" />
-    </rule>
-
     <rule ref="PSR12">
+        <exclude name="Generic.NamingConventions.UpperCaseConstantName" />
         <exclude name="PSR12.Files.FileHeader" />
         <exclude name="PSR12.Classes.ClassInstantiation.MissingParentheses" />
+    </rule>
+
+    <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+        <exclude-pattern>*/stubs/runtime.php</exclude-pattern>
     </rule>
 
     <rule ref="Generic.Files.LineLength">
