@@ -12,9 +12,11 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Contracts\Events\Dispatcher;
 
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Failed\FailedJobProviderInterface;
 
 class BrefServiceProvider extends ServiceProvider
 {
@@ -67,7 +69,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot(Dispatcher $dispatcher, LogManager $logManager)
+    public function boot(Dispatcher $dispatcher, LogManager $logManager, FailedJobProviderInterface $queueFailer)
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
@@ -97,6 +99,15 @@ class BrefServiceProvider extends ServiceProvider
             fn (JobExceptionOccurred $event) => $logManager->info(
                 "Job failed {$event->job->getJobId()}",
                 ['name' => $event->job->resolveName()]
+            )
+        );
+
+        $dispatcher->listen(
+            fn (JobFailed $event) => $queueFailer->log(
+                $event->connectionName,
+                $event->job->getQueue(),
+                $event->job->getRawBody(),
+                $event->exception
             )
         );
     }
