@@ -3,10 +3,11 @@
 namespace CacheWerk\BrefLaravelBridge\Http;
 
 use Bref\Context\Context;
-use Bref\Event\Http\HttpRequestEvent;
 use Bref\Event\Http\Psr7Bridge;
-use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Bref\Event\Http\HttpRequestEvent;
+
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 
 class SymfonyRequestBridge
 {
