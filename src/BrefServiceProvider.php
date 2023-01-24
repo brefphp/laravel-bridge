@@ -41,8 +41,8 @@ class BrefServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        $isRunningInLambda = isset($_SERVER['LAMBDA_TASK_ROOT']);
-
+        $isRunningInLambda = is_string(getenv('LAMBDA_TASK_ROOT');
+        
         // Laravel Mix URL for assets stored on S3
         $mixAssetUrl = $_SERVER['MIX_ASSET_URL'] ?? null;
         if ($mixAssetUrl) {
@@ -78,5 +78,10 @@ class BrefServiceProvider extends ServiceProvider
         // to avoid errors. If you want to actively use the cache, it will be best to use
         // the dynamodb driver instead.
         Config::set('cache.stores.file.path', '/tmp/storage/framework/cache');
+                                       
+        // Enable artisan tinker command. The command uses the psysh packge, which tries to write some history files.
+        if($this->app->runningInConsole()) {
+            putenv('XDG_CONFIG_HOME=/tmp/psysh');
+        }
     }
 }
