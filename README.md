@@ -146,6 +146,10 @@ functions:
       OCTANE_PERSIST_DATABASE_SESSIONS: 1
 ```
 
+### JSON logs
+
+If you want all CloudWatch log entries to be JSON objects (for example because you want to ingest those logs in other systems), you can edit `config/logging.php` to set the `channels.stderr.formatter` to `Monolog\Formatter\JsonFormatter::class`.
+
 ## Usage
 
 ### Artisan Console

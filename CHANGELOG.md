@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.0.0]
+### Breaking Changes
+- Logs are now written in plain text by default instead of JSON. To enable JSON logs, set `channels.stderr.formatter` to `Monolog\Formatter\JsonFormatter::class` in `config/logging.php`.
+
 ## [Unreleased]
 ## [v0.3.0] - 2022-11-15
 ### Changed
