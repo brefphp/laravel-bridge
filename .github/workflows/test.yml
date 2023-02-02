@@ -3,10 +3,13 @@
 name: "Tests"
 
 on:
+  pull_request: null
   push:
     branches:
       - "main"
-  pull_request: null
+
+permissions:
+  contents: "read"
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -16,9 +19,9 @@ jobs:
 
   byte_level:
     name: "Byte-level"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     steps:
-      - name: "Checkout code"
+      - name: "Checkout repository"
         uses: "actions/checkout@v3"
 
       - name: "Check file permissions"
@@ -31,7 +34,7 @@ jobs:
 
   syntax_errors:
     name: "Syntax errors"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
     steps:
       - name: "Set up PHP"
         uses: "shivammathur/setup-php@v2"
@@ -39,7 +42,7 @@ jobs:
           php-version: "8.0"
           coverage: "none"
 
-      - name: "Checkout code"
+      - name: "Checkout repository"
         uses: "actions/checkout@v3"
 
       - name: "Install dependencies"
@@ -64,7 +67,7 @@ jobs:
         dependencies:
           - "lowest"
           - "highest"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
 
     steps:
       - name: "Set up PHP"
@@ -72,7 +75,7 @@ jobs:
         with:
           php-version: "${{ matrix.php-version }}"
 
-      - name: "Checkout code"
+      - name: "Checkout repository"
         uses: "actions/checkout@v3"
 
       - name: "Install dependencies"
@@ -88,7 +91,7 @@ jobs:
     needs:
       - "byte_level"
       - "syntax_errors"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
 
     steps:
       - name: "Set up PHP"
@@ -97,7 +100,7 @@ jobs:
           php-version: "8.0"
           coverage: "none"
 
-      - name: "Checkout code"
+      - name: "Checkout repository"
         uses: "actions/checkout@v3"
 
       - name: "Check JSON files"
@@ -105,7 +108,7 @@ jobs:
           find . -type f -name '*.json' | xargs -t -L 1 -- php -r 'json_decode(file_get_contents($argv[1]), null, 512, JSON_THROW_ON_ERROR);'
 
       - name: "Validate Composer configuration"
-        run: "composer validate --strict"
+        run: "composer validate --no-interaction --strict"
 
       - name: "Install dependencies"
         uses: "ramsey/composer-install@v2"
@@ -113,7 +116,7 @@ jobs:
           dependency-versions: "highest"
 
       - name: "Check PSR-4 mapping"
-        run: "composer dump-autoload --optimize --strict-psr"
+        run: "composer dump-autoload --no-interaction --optimize --strict-psr"
 
       - name: "Perform static analysis"
         run: "composer exec -- phpstan analyze -c vendor/nunomaduro/larastan/extension.neon -l 5 src/ stubs/"
@@ -123,7 +126,7 @@ jobs:
     needs:
       - "byte_level"
       - "syntax_errors"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
 
     steps:
       - name: "Set up PHP"
@@ -132,7 +135,7 @@ jobs:
           php-version: "8.0"
           coverage: "none"
 
-      - name: "Checkout code"
+      - name: "Checkout repository"
         uses: "actions/checkout@v3"
 
       - name: "Check EditorConfig configuration"
@@ -149,15 +152,20 @@ jobs:
       - name: "Check coding style"
         run: "composer exec -- phpcs -s src/ stubs/"
 
+      # Move TODO-s into GitHub issues!
+      - name: "Search for TODO-s and FIXME-s"
+        run: |
+          ! git grep --extended-regexp --ignore-case '\b(TODO|FIXME)\b' -- ':/' ':!*/test\.yml'
+
   exported_files:
     name: "Exported files"
     needs:
       - "byte_level"
       - "syntax_errors"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-22.04"
 
     steps:
-      - name: "Checkout code"
+      - name: "Checkout repository"
         uses: "actions/checkout@v3"
 
       - name: "Check exported files"
