@@ -184,7 +184,7 @@ serverless deploy function --function=cli --update-config
 serverless deploy function --function=queue --update-config
 ```
 
-One caveat with the `--update-config` flag is that it doesn't objects in `environment` variables in the `serverless.yml`:
+One caveat with the `--update-config` flag is that it doesn't do objects in `environment` variables in the `serverless.yml`:
 
 ```yml
 provider:
