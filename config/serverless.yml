@@ -16,6 +16,7 @@ package:
         - '!resources/assets/**'
         - '!storage/**'
         - '!tests/**'
+        - '!.git/**'
 
 functions:
     # This function runs the Laravel website/API
