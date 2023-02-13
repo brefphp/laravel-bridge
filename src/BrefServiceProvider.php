@@ -139,10 +139,6 @@ class BrefServiceProvider extends ServiceProvider
             Config::set('session.driver', 'cookie');
         }
 
-        if (Config::get('filesystems.default') === 'local') {
-            Config::set('filesystems.default', 's3');
-        }
-
         if (Config::get('logging.default') === 'stack') {
             Config::set('logging.default', 'stderr');
         }

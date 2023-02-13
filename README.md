@@ -150,6 +150,12 @@ functions:
 
 If you want all CloudWatch log entries to be JSON objects (for example because you want to ingest those logs in other systems), you can edit `config/logging.php` to set the `channels.stderr.formatter` to `Monolog\Formatter\JsonFormatter::class`.
 
+### File storage
+
+When running on Lambda, the filesystem is temporary and not shared between instances. If you want to use the Filesystem API, you will need to use the `s3` adapter to store files on AWS S3.
+
+To do this, set `FILESYSTEM_DISK: s3` either in `serverless.yml` or your production `.env` file and configure the S3 bucket to use in `config/filesystems.php`.
+
 ## Usage
 
 ### Artisan Console

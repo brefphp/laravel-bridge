@@ -32,6 +32,9 @@ provider:
     SQS_QUEUE: ${self:service}-${sls:stage}
     DYNAMODB_CACHE_TABLE: ${self:service}-${sls:stage}-cache
     MAINTENANCE_MODE: ${param:maintenance, null}
+    # Use S3 for filesystem storage
+    FILESYSTEM_DISK: s3
+    AWS_BUCKET: !Ref StorageBucket
   iam:
     role:
       statements:
@@ -44,6 +47,12 @@ provider:
         - Effect: Allow
           Resource: arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/${self:service}-${sls:stage}/*
           Action: [ssm:GetParameters]
+        # Allow Lambda to read and write files in the S3 storage bucket
+        - Effect: Allow
+          Action: s3:*
+          Resource:
+            - !Sub '${StorageBucket.Arn}' # the storage bucket
+            - !Sub '${StorageBucket.Arn}/*' # and everything inside
 
 plugins:
   - ./vendor/bref/bref
@@ -133,3 +142,7 @@ resources:
       Properties:
         QueueName: ${self:service}-${sls:stage}
         VisibilityTimeout: 70
+    StorageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        Description: Storage bucket for the Laravel application
