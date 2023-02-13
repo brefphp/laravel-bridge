@@ -2,6 +2,8 @@
 
 namespace CacheWerk\BrefLaravelBridge;
 
+use RuntimeException;
+
 class StorageDirectories
 {
     /**
@@ -26,11 +28,15 @@ class StorageDirectories
             self::Path . '/framework/views',
         ];
 
-        foreach ($directories as $directory) {
-            if (! is_dir($directory)) {
-                fwrite(STDERR, "Creating storage directory: {$directory}" . PHP_EOL);
+        $directories = array_filter($directories, static fn ($directory) => ! is_dir($directory));
 
-                mkdir($directory, 0755, true);
+        if (count($directories)) {
+            fwrite(STDERR, 'Creating storage directories: ' . implode(', ', $directories) . PHP_EOL);
+        }
+
+        foreach ($directories as $directory) {
+            if (! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                throw new RuntimeException("Directory {$directory} could not be created");
             }
         }
     }
