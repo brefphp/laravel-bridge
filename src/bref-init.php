@@ -3,6 +3,7 @@
 use Bref\Bref;
 
 use CacheWerk\BrefLaravelBridge\HandlerResolver;
+use CacheWerk\BrefLaravelBridge\MaintenanceMode;
 use CacheWerk\BrefLaravelBridge\StorageDirectories;
 
 Bref::beforeStartup(static function () {
@@ -11,6 +12,8 @@ Bref::beforeStartup(static function () {
     }
 
     StorageDirectories::create();
+
+    MaintenanceMode::setUp();
 
     $defaultConfigCachePath = $_SERVER['LAMBDA_TASK_ROOT'] . '/bootstrap/cache/config.php';
 
