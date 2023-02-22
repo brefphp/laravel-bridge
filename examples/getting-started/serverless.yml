@@ -23,8 +23,6 @@ provider:
     APP_URL: ${param:appUrl}
     APP_ENV: ${sls:stage}
     APP_DEBUG: ${param:debug}
-    APP_SSM_PREFIX: /${self:service}-${sls:stage}/
-    APP_SSM_PARAMETERS: "APP_KEY"
     AWS_ACCOUNT_ID: ${aws:accountId}
     ASSET_URL: https://${param:assetsBucket}/${sls:instanceId}
     LOG_LEVEL: ${param:logLevel}
@@ -44,9 +42,6 @@ provider:
         - Effect: Allow
           Resource: !GetAtt Queue.Arn
           Action: [sqs:GetQueueUrl, sqs:GetQueueAttributes, sqs:SendMessage, sqs:receiveMessage, sqs:DeleteMessage, sqs:PurgeQueue]
-        - Effect: Allow
-          Resource: arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/${self:service}-${sls:stage}/*
-          Action: [ssm:GetParameters]
         # Allow Lambda to read and write files in the S3 storage bucket
         - Effect: Allow
           Action: s3:*
@@ -60,10 +55,9 @@ plugins:
 
 functions:
   web:
-    handler: php/runtime.php
+    handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler
     timeout: 20
     environment:
-      APP_RUNTIME: octane
       BREF_LOOP_MAX: 250
       BREF_BINARY_RESPONSES: 1
     layers:

@@ -16,10 +16,20 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OctaneHandler extends HttpHandler
 {
+    private OctaneClient $octaneClient;
+
+    public function __construct()
+    {
+        $this->octaneClient = new OctaneClient(
+            getcwd(),
+            (bool) ($_ENV['OCTANE_PERSIST_DATABASE_SESSIONS'] ?? false)
+        );
+    }
+
     /**
      * {@inheritDoc}
      */
-    public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
+    public function handleRequest(HttpRequestEvent $event, Context $context): HttpResponse
     {
         $request = Request::createFromBase(
             SymfonyRequestBridge::convertRequest($event, $context)
@@ -28,7 +38,7 @@ class OctaneHandler extends HttpHandler
         if (MaintenanceMode::active()) {
             $response = MaintenanceMode::response($request)->prepare($request);
         } else {
-            $response = OctaneClient::handle($request);
+            $response = $this->octaneClient->handle($request);
         }
 
         if (! $response->headers->has('Content-Type')) {

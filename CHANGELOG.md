@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v2.0.0]
 ### Breaking Changes
 - Logs are now written in plain text by default instead of JSON. To enable JSON logs, set `channels.stderr.formatter` to `Monolog\Formatter\JsonFormatter::class` in `config/logging.php`.
+- The automatic population of environment variables via `APP_SSM_PREFIX` and `APP_SSM_PARAMETERS` has been removed. The native Bref 2.0 feature to load SSM parameters into environment variables can be used instead ([#36](https://github.com/cachewerk/bref-laravel-bridge/pull/36))
+- If you use Octane, remove the `bref/runtime.php` file, remove the `APP_RUNTIME` environment variable (in `serverless.yml`) and set your Octane function handler to: `handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler`.
 
 ## [Unreleased]
 ## [v0.3.0] - 2022-11-15

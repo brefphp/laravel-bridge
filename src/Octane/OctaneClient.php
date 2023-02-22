@@ -20,29 +20,18 @@ class OctaneClient implements Client
 {
     /**
      * The Octane worker.
-     *
-     * @var \Laravel\Octane\Worker
      */
-    protected static $worker;
+    private Worker $worker;
 
     /**
-     * The Octane response.
-     *
-     * @var \Laravel\Octane\OctaneResponse|null
+     * The response of the last request that was processed.
      */
-    protected static $response;
+    private OctaneResponse|null $response;
 
-    /**
-     * Boots an Octane worker instance.
-     *
-     * @param  string  $basePath
-     * @param  bool  $persistDatabaseSession
-     * @return void
-     */
-    public static function boot(string $basePath, bool $persistDatabaseSession)
+    public function __construct(string $basePath, bool $persistDatabaseSession)
     {
-        static::$worker = tap(
-            new Worker(new ApplicationFactory($basePath), new self)
+        $this->worker = tap(
+            new Worker(new ApplicationFactory($basePath), $this)
         )->boot()->onRequestHandled(
             static::manageDatabaseSessions($persistDatabaseSession)
         );
@@ -54,14 +43,14 @@ class OctaneClient implements Client
      * @param  \Illuminate\Http\Request  $request
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    public static function handle(Request $request): Response
+    public function handle(Request $request): Response
     {
-        static::$worker->application()->useStoragePath('/tmp/storage');
+        $this->worker->application()->useStoragePath('/tmp/storage');
 
-        static::$worker->handle($request, new RequestContext);
+        $this->worker->handle($request, new RequestContext);
 
-        $response = clone static::$response->response;
-        static::$response = null;
+        $response = clone $this->response->response;
+        $this->response = null;
 
         return $response;
     }
@@ -72,14 +61,14 @@ class OctaneClient implements Client
     public function error(Throwable $exception, Application $app, Request $request, RequestContext $context): void
     {
         try {
-            static::$response = new OctaneResponse(
+            $this->response = new OctaneResponse(
                 $app[ExceptionHandler::class]->render($request, $exception)
             );
         } catch (Throwable $throwable) {
             fwrite(STDERR, $throwable->getMessage());
             fwrite(STDERR, $exception->getMessage());
 
-            static::$response = new OctaneResponse(
+            $this->response = new OctaneResponse(
                 new Response('Internal Server Error', 500)
             );
         }
@@ -90,7 +79,7 @@ class OctaneClient implements Client
      */
     public function respond(RequestContext $context, OctaneResponse $response): void
     {
-        static::$response = $response;
+        $this->response = $response;
     }
 
     /**

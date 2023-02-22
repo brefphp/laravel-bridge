@@ -28,7 +28,7 @@ composer require cachewerk/bref-laravel-bridge
 php artisan vendor:publish --tag=bref-runtime
 ```
 
-By default the runtime is published to `php/` where Bref's PHP configuration resides, but it can be move anywhere.
+This will create the `serverless.yml` config file.
 
 Next, we need to set up in the `AWS_ACCOUNT_ID` environment variable in your `serverless.yml`:
 
@@ -38,67 +38,62 @@ provider:
     AWS_ACCOUNT_ID: ${aws:accountId}
 ```
 
-Then set up your functions:
-
-```yml
-functions:
-  web:
-    handler: php/runtime.php
-    environment:
-      APP_RUNTIME: octane
-      BREF_LOOP_MAX: 250
-    layers:
-      - ${bref:layer.php-81}
-    events:
-      - httpApi: '*'
-
-  queue:
-    handler: php/runtime.php
-    timeout: 59
-    environment:
-      APP_RUNTIME: queue
-    layers:
-      - ${bref:layer.php-81}
-    events:
-      - sqs:
-          arn: !GetAtt Queue.Arn
-          batchSize: 1
-          maximumBatchingWindow: 60
-
-  cli:
-    handler: php/runtime.php
-    timeout: 720
-    environment:
-      APP_RUNTIME: cli
-    layers:
-      - ${bref:layer.php-81}
-      - ${bref:layer.console}
-    events:
-      - schedule:
-          rate: rate(1 minute)
-          input: '"schedule:run"'
-```
-
-If you don't want to use Octane, simply remove `APP_RUNTIME` and `BREF_LOOP_MAX` from the `web` function.
-
-To avoid setting secrets as environment variables on your Lambda functions, you can inject them directly into the Lambda runtime:
-
-```yml
-provider:
-  environment:
-    APP_SSM_PREFIX: /${self:service}-${sls:stage}/
-    APP_SSM_PARAMETERS: "APP_KEY, DATABASE_URL"
-```
-
-This will inject `APP_KEY` and `DATABASE_URL` using your service name and stage, for example from `/myapp-staging/APP_KEY`.
-
 Finally, deploy your app:
 
+```bash
+serverless deploy
 ```
-sls deploy --stage=staging
+
+When running in AWS Lambda, the Laravel application will automatically cache its configuration when booting. You don't need to run `php artisan config:cache` before deploying.
+
+You can deploy to different environments (aka "stages") by using the `--stage` option:
+
+```bash
+serverless deploy --stage=staging
 ```
 
 Check out some more [comprehensive examples](examples/).
+
+## Octane
+
+If you want to run the HTTP application with Laravel Octane, you will to change the following options in the `web` function:
+
+```yml
+functions:
+    web:
+        handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler
+        environment:
+            BREF_LOOP_MAX: 250
+        layers:
+            - ${bref:layer.php-81}
+        # ...
+```
+
+## Laravel Queues
+
+If you want to run Laravel Queues, you will need to publish the PHP runtime (just like in the "Octane" section above):
+
+```
+php artisan vendor:publish --tag=bref-runtime
+```
+
+Then, you can add a `queue` function to `serverless.yml`:
+
+```yml
+functions:
+    queue:
+        handler: php/runtime.php
+        timeout: 59 # in seconds
+        environment:
+            APP_RUNTIME: queue
+        layers:
+            - ${bref:layer.php-81}
+        events:
+            -   sqs:
+                    arn: !GetAtt Queue.Arn
+                    batchSize: 1
+                    maximumBatchingWindow: 60
+```
 
 ## Configuration
 

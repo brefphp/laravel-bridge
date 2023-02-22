@@ -10,7 +10,7 @@
     "require": {
         "php": "^8.0",
         "aws/aws-sdk-php": "^3.222",
-        "bref/bref": "^1.5",
+        "bref/bref": "^2.0.0-beta14",
         "illuminate/container": "^8.0 || ^9.0",
         "illuminate/contracts": "^8.0 || ^9.0",
         "illuminate/http": "^8.0 || ^9.0",
@@ -30,7 +30,10 @@
     "autoload": {
         "psr-4": {
             "CacheWerk\\BrefLaravelBridge\\": "src"
-        }
+        },
+        "files": [
+            "src/bref-init.php"
+        ]
     },
     "config": {
         "sort-packages": true
