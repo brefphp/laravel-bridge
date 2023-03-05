@@ -7,7 +7,6 @@
     </rule>
 
     <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
-        <exclude-pattern>*/stubs/runtime.php</exclude-pattern>
         <exclude-pattern>src/bref-init.php</exclude-pattern>
     </rule>
 

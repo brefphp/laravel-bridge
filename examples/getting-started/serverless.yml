@@ -66,10 +66,8 @@ functions:
       - httpApi: '*'
 
   cli:
-    handler: php/runtime.php
+    handler: artisan
     timeout: 720
-    environment:
-      APP_RUNTIME: cli
     layers:
       - ${bref:layer.php-81}
       - ${bref:layer.console}
@@ -79,10 +77,8 @@ functions:
           input: '"schedule:run"'
 
   queue:
-    handler: php/runtime.php
+    handler: CacheWerk\BrefLaravelBridge\Queue\QueueHandler
     timeout: 59
-    environment:
-      APP_RUNTIME: queue
     layers:
       - ${bref:layer.php-81}
     events:

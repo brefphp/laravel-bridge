@@ -37,13 +37,19 @@ class QueueHandler extends SqsHandler
     protected const JOB_TIMEOUT_SAFETY_MARGIN = 1.0;
 
     /**
+     * The name of the SQS queue.
+     *
+     * @var string
+     */
+    protected string $queueName;
+
+    /**
      * Creates a new SQS queue handler instance.
      *
      * @param  \Illuminate\Container\Container  $container
      * @param  \Illuminate\Contracts\Events\Dispatcher  $events
      * @param  \Illuminate\Contracts\Debug\ExceptionHandler  $exceptions
      * @param  string  $connection
-     * @param  string  $queue
      * @return void
      */
     public function __construct(
@@ -51,7 +57,6 @@ class QueueHandler extends SqsHandler
         protected Dispatcher $events,
         protected ExceptionHandler $exceptions,
         protected string $connection,
-        protected string $queue,
     ) {
         $queue = $container->make(QueueManager::class)
             ->connection($connection);
@@ -60,6 +65,7 @@ class QueueHandler extends SqsHandler
             throw new RuntimeException('Default queue connection is not a SQS connection');
         }
 
+        $this->queueName = $queue->getQueue(null);
         $this->sqs = $queue->getSqs();
     }
 
@@ -112,7 +118,7 @@ class QueueHandler extends SqsHandler
             $this->sqs,
             $message,
             $this->connection,
-            $this->queue,
+            $this->queueName,
         );
     }
 

@@ -25,7 +25,7 @@ Next, install the package and publish the custom Bref runtime:
 ```
 composer require cachewerk/bref-laravel-bridge
 
-php artisan vendor:publish --tag=bref-runtime
+php artisan vendor:publish --tag=serverless-config
 ```
 
 This will create the `serverless.yml` config file.
@@ -71,21 +71,13 @@ functions:
 
 ## Laravel Queues
 
-If you want to run Laravel Queues, you will need to publish the PHP runtime (just like in the "Octane" section above):
-
-```
-php artisan vendor:publish --tag=bref-runtime
-```
-
-Then, you can add a `queue` function to `serverless.yml`:
+If you want to run Laravel Queues, you will need to add a `queue` function to `serverless.yml`:
 
 ```yml
 functions:
     queue:
-        handler: php/runtime.php
+        handler: CacheWerk\BrefLaravelBridge\Queue\QueueHandler
         timeout: 59 # in seconds
-        environment:
-            APP_RUNTIME: queue
         layers:
             - ${bref:layer.php-81}
         events:
@@ -114,7 +106,7 @@ Lastly tell Bref to support binary responses on your `web` function:
 ```yml
 functions:
   web:
-    handler: php/runtime.php
+    handler: public/index.php
     environment:
       BREF_BINARY_RESPONSES: 1
 ```
@@ -134,9 +126,8 @@ Lastly, set the `OCTANE_PERSIST_DATABASE_SESSIONS` environment variable.
 ```yml
 functions:
   web:
-    handler: php/runtime.php
+    handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler
     environment:
-      APP_RUNTIME: octane
       BREF_LOOP_MAX: 250
       OCTANE_PERSIST_DATABASE_SESSIONS: 1
 ```
