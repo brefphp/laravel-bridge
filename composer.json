@@ -1,12 +1,15 @@
 {
-    "name": "cachewerk/bref-laravel-bridge",
+    "name": "bref/laravel-bridge",
     "description": "An advanced Laravel integration for Bref, including Octane support.",
     "license": "MIT",
+    "homepage": "https://bref.sh/docs/frameworks/laravel.html",
     "keywords": [
-        "laravel",
-        "bref"
+        "bref",
+        "serverless",
+        "aws",
+        "lambda",
+        "faas"
     ],
-    "homepage": "https://github.com/cachewerk/bref-laravel-bridge",
     "require": {
         "php": "^8.0",
         "aws/aws-sdk-php": "^3.222",
