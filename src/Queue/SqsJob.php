@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Queue;
+namespace Bref\LaravelBridge\Queue;
 
 use Illuminate\Queue\Jobs\SqsJob as LaravelSqsJob;
 

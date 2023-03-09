@@ -55,7 +55,7 @@ plugins:
 
 functions:
   web:
-    handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler
+    handler: Bref\LaravelBridge\Http\OctaneHandler
     timeout: 20
     environment:
       BREF_LOOP_MAX: 250
@@ -77,7 +77,7 @@ functions:
           input: '"schedule:run"'
 
   queue:
-    handler: CacheWerk\BrefLaravelBridge\Queue\QueueHandler
+    handler: Bref\LaravelBridge\Queue\QueueHandler
     timeout: 59
     layers:
       - ${bref:layer.php-81}

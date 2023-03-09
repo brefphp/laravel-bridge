@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Queue;
+namespace Bref\LaravelBridge\Queue;
 
 use RuntimeException;
 
@@ -18,7 +18,7 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
-use CacheWerk\BrefLaravelBridge\MaintenanceMode;
+use Bref\LaravelBridge\MaintenanceMode;
 
 class QueueHandler extends SqsHandler
 {
@@ -101,7 +101,7 @@ class QueueHandler extends SqsHandler
      * Marshal the job with the given Bref SQS record.
      *
      * @param  \Bref\Event\Sqs\SqsRecord  $sqsRecord
-     * @return \CacheWerk\BrefLaravelBridge\Queue\SqsJob
+     * @return \Bref\LaravelBridge\Queue\SqsJob
      */
     protected function marshalJob(SqsRecord $sqsRecord): SqsJob
     {

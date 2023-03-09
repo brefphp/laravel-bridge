@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Http;
+namespace Bref\LaravelBridge\Http;
 
 use Bref\Context\Context;
 use Bref\Event\Http\Psr7Bridge;

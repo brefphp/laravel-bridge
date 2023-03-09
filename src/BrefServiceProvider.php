@@ -1,8 +1,8 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge;
+namespace Bref\LaravelBridge;
 
-use CacheWerk\BrefLaravelBridge\Queue\QueueHandler;
+use Bref\LaravelBridge\Queue\QueueHandler;
 
 use Illuminate\Log\LogManager;
 

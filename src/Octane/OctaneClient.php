@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Octane;
+namespace Bref\LaravelBridge\Octane;
 
 use Throwable;
 

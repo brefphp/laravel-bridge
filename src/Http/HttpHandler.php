@@ -1,8 +1,8 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Http;
+namespace Bref\LaravelBridge\Http;
 
-use CacheWerk\BrefLaravelBridge\MaintenanceMode;
+use Bref\LaravelBridge\MaintenanceMode;
 
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Http\Kernel;

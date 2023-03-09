@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge;
+namespace Bref\LaravelBridge;
 
 use RuntimeException;
 
@@ -10,7 +10,7 @@ use Psr\Container\ContainerInterface;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Console\Kernel;
 
-use CacheWerk\BrefLaravelBridge\Http\OctaneHandler;
+use Bref\LaravelBridge\Http\OctaneHandler;
 
 /**
  * This class resolves Lambda handlers.

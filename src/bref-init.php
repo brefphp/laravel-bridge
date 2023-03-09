@@ -2,9 +2,9 @@
 
 use Bref\Bref;
 
-use CacheWerk\BrefLaravelBridge\HandlerResolver;
-use CacheWerk\BrefLaravelBridge\MaintenanceMode;
-use CacheWerk\BrefLaravelBridge\StorageDirectories;
+use Bref\LaravelBridge\HandlerResolver;
+use Bref\LaravelBridge\MaintenanceMode;
+use Bref\LaravelBridge\StorageDirectories;
 
 Bref::beforeStartup(static function () {
     if (! defined('STDERR')) {

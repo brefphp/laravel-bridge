@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Http\Middleware;
+namespace Bref\LaravelBridge\Http\Middleware;
 
 use Closure;
 

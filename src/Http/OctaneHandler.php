@@ -1,9 +1,9 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge\Http;
+namespace Bref\LaravelBridge\Http;
 
-use CacheWerk\BrefLaravelBridge\MaintenanceMode;
-use CacheWerk\BrefLaravelBridge\Octane\OctaneClient;
+use Bref\LaravelBridge\MaintenanceMode;
+use Bref\LaravelBridge\Octane\OctaneClient;
 
 use Illuminate\Http\Request;
 

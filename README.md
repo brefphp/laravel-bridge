@@ -23,7 +23,7 @@ First, be sure to familiarize yourself with Bref and its guide to [Serverless La
 Next, install the package and publish the custom Bref runtime:
 
 ```
-composer require cachewerk/bref-laravel-bridge
+composer require bref/laravel-bridge
 
 php artisan vendor:publish --tag=serverless-config
 ```
@@ -61,7 +61,7 @@ If you want to run the HTTP application with Laravel Octane, you will to change 
 ```yml
 functions:
     web:
-        handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler
+        handler: Bref\LaravelBridge\Http\OctaneHandler
         environment:
             BREF_LOOP_MAX: 250
         layers:
@@ -76,7 +76,7 @@ If you want to run Laravel Queues, you will need to add a `queue` function to `s
 ```yml
 functions:
     queue:
-        handler: CacheWerk\BrefLaravelBridge\Queue\QueueHandler
+        handler: Bref\LaravelBridge\Queue\QueueHandler
         timeout: 59 # in seconds
         layers:
             - ${bref:layer.php-81}
@@ -126,7 +126,7 @@ Lastly, set the `OCTANE_PERSIST_DATABASE_SESSIONS` environment variable.
 ```yml
 functions:
   web:
-    handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler
+    handler: Bref\LaravelBridge\Http\OctaneHandler
     environment:
       BREF_LOOP_MAX: 250
       OCTANE_PERSIST_DATABASE_SESSIONS: 1

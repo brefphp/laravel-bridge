@@ -1,6 +1,6 @@
 <?php
 
-namespace CacheWerk\BrefLaravelBridge;
+namespace Bref\LaravelBridge;
 
 use Illuminate\Http\Request;
 
