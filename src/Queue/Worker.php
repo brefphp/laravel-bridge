@@ -27,6 +27,9 @@ class Worker extends LaravelWorker
                 $job,
                 $this->maxAttemptsExceededException($job),
             );
+
+            // exit so that PHP will shutdown and close DB connections etc.
+            exit(1);
         });
 
         pcntl_alarm(
