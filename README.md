@@ -30,14 +30,6 @@ php artisan vendor:publish --tag=serverless-config
 
 This will create the `serverless.yml` config file.
 
-Next, we need to set up in the `AWS_ACCOUNT_ID` environment variable in your `serverless.yml`:
-
-```yml
-provider:
-  environment:
-    AWS_ACCOUNT_ID: ${aws:accountId}
-```
-
 Finally, deploy your app:
 
 ```bash
