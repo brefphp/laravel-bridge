@@ -6,7 +6,7 @@ on:
   pull_request: null
   push:
     branches:
-      - "main"
+      - "master"
 
 permissions:
   contents: "read"
@@ -84,7 +84,7 @@ jobs:
           dependency-versions: "${{ matrix.dependencies }}"
 
       - name: "Execute unit tests"
-        run: "composer exec -- phpunit -v || true"
+        run: "composer exec -- phpunit || true"
 
   static_analysis:
     name: "Static Analysis"
