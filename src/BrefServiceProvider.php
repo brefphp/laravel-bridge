@@ -53,13 +53,9 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('filesystems.disks.s3.secret');
         Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
 
-        $account = env('AWS_ACCOUNT_ID');
-        $region = env('AWS_REGION', env('AWS_DEFAULT_REGION', 'us-east-1'));
-
         Config::set('queue.connections.sqs.key');
         Config::set('queue.connections.sqs.secret');
         Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
-        Config::set('queue.connections.sqs.prefix', env('SQS_PREFIX', "https://sqs.{$region}.amazonaws.com/{$account}"));
 
         $this->app->when(QueueHandler::class)
             ->needs('$connection')

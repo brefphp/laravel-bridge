@@ -23,7 +23,6 @@ provider:
     APP_URL: ${param:appUrl}
     APP_ENV: ${sls:stage}
     APP_DEBUG: ${param:debug}
-    AWS_ACCOUNT_ID: ${aws:accountId}
     ASSET_URL: https://${param:assetsBucket}/${sls:instanceId}
     LOG_LEVEL: ${param:logLevel}
     QUEUE_CONNECTION: ${param:queue, 'sqs'}
