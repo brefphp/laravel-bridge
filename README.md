@@ -1,167 +1,184 @@
-Package to use Laravel on AWS Lambda with [Bref](https://bref.sh/).
+# Bref Laravel Bridge
 
-This package provides the following benefits:
+An advanced Laravel integration for Bref, including Octane support.
 
-- it configures Laravel for AWS Lambda (for websites, APIs or workers)
-- it provides a bridge to run Laravel Queues worker on AWS Lambda
+This project is largely based on code from [PHP Runtimes](https://github.com/php-runtime/runtime), [Laravel Vapor](https://github.com/laravel/vapor-core) and [Bref's Laravel Bridge](https://github.com/brefphp/laravel-bridge).
 
-You can read the [Bref documentation for Laravel](https://bref.sh/docs/frameworks/laravel.html) for more documentation.
+## Background
 
-In any case, it is recommended to [first learn about serverless, AWS Lambda and Bref](https://bref.sh/docs/) before using this package.
+Why does this exist and why not just use [Laravel Vapor](https://vapor.laravel.com)? Vapor is fantastic, easy to use and the better choice for situations, its $399/year pay for itself not having to maintain your own infrastructure.
+
+For [Relay](https://relay.so)'s API however we needed something that 1) **is open source** _(Vapor's API is a black box)_, 2) **is secure** _(Vapor has admin access to databases and environment variables)_ and 3) doesn't leave us at the **mercy of a support team** _(Vapor has no enterprise support)_. We also didn't want to be forced to use CloudFront on top of Cloudflare, but that's just nerdy preference.
+
+We needed an open source solution that gives us more fine-grained control and is secure.
+
+[Bref](https://bref.sh) + [Serverless Framework](https://www.serverless.com/) is exactly that, however Bref's Laravel integration is rather basic, it easily exposes SSM secrets and it doesn't support Laravel Octane.
+
+So we built this.
 
 ## Installation
 
-```bash
-composer require bref/laravel-bridge --update-with-dependencies
+First, be sure to familiarize yourself with Bref and its guide to [Serverless Laravel applications](https://bref.sh/docs/frameworks/laravel.html).
+
+Next, install the package and publish the custom Bref runtime:
+
 ```
+composer require bref/laravel-bridge
 
-The `Bref\LaravelBridge\BrefServiceProvider` service provider will be registered automatically.
-
-You can now create a default `serverless.yml` at the root of your project by running:
-
-```bash
 php artisan vendor:publish --tag=serverless-config
 ```
 
-The application is now ready to be deployed:
+This will create the `serverless.yml` config file.
+
+Finally, deploy your app:
 
 ```bash
 serverless deploy
 ```
 
+When running in AWS Lambda, the Laravel application will automatically cache its configuration when booting. You don't need to run `php artisan config:cache` before deploying.
+
+You can deploy to different environments (aka "stages") by using the `--stage` option:
+
+```bash
+serverless deploy --stage=staging
+```
+
+Check out some more [comprehensive examples](examples/).
+
+## Octane
+
+If you want to run the HTTP application with Laravel Octane, you will to change the following options in the `web` function:
+
+```yml
+functions:
+    web:
+        handler: Bref\LaravelBridge\Http\OctaneHandler
+        environment:
+            BREF_LOOP_MAX: 250
+        layers:
+            - ${bref:layer.php-81}
+        # ...
+```
+
+## Laravel Queues
+
+If you want to run Laravel Queues, you will need to add a `queue` function to `serverless.yml`:
+
+```yml
+functions:
+    queue:
+        handler: Bref\LaravelBridge\Queue\QueueHandler
+        timeout: 59 # in seconds
+        layers:
+            - ${bref:layer.php-81}
+        events:
+            -   sqs:
+                    arn: !GetAtt Queue.Arn
+                    batchSize: 1
+                    maximumBatchingWindow: 60
+```
+
+## Configuration
+
+### Serving static assets
+
+If you want to serve some static assets from your app's `public` directory, you can use the `ServeStaticAssets` middleware.
+
+First, publish the configuration:
+
+```
+php artisan vendor:publish --tag=bref-config
+```
+
+Then define the files you want to serve in `bref.assets`.
+
+Lastly tell Bref to support binary responses on your `web` function:
+
+```yml
+functions:
+  web:
+    handler: public/index.php
+    environment:
+      BREF_BINARY_RESPONSES: 1
+```
+
+### Persistent database sessions
+
+If you're using PostgreSQL 9.6 or newer, you can take advantage of persistent database sessions.
+
+First set [`idle_in_transaction_session_timeout`](https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-IDLE-IN-TRANSACTION-SESSION-TIMEOUT) either in your RDS database's parameter group, or on a specific database itself.
+
+```sql
+ALTER DATABASE SET idle_in_transaction_session_timeout = '10000' -- 10 seconds in ms
+```
+
+Lastly, set the `OCTANE_PERSIST_DATABASE_SESSIONS` environment variable.
+
+```yml
+functions:
+  web:
+    handler: Bref\LaravelBridge\Http\OctaneHandler
+    environment:
+      BREF_LOOP_MAX: 250
+      OCTANE_PERSIST_DATABASE_SESSIONS: 1
+```
+
+### JSON logs
+
+If you want all CloudWatch log entries to be JSON objects (for example because you want to ingest those logs in other systems), you can edit `config/logging.php` to set the `channels.stderr.formatter` to `Monolog\Formatter\JsonFormatter::class`.
+
+### File storage
+
+When running on Lambda, the filesystem is temporary and not shared between instances. If you want to use the Filesystem API, you will need to use the `s3` adapter to store files on AWS S3.
+
+To do this, set `FILESYSTEM_DISK: s3` either in `serverless.yml` or your production `.env` file and configure the S3 bucket to use in `config/filesystems.php`.
+
 ## Usage
 
-Read [the official Laravel Bridge documentation on bref.sh](https://bref.sh/docs/frameworks/laravel.html).
+### Artisan Console
 
-## Laravel Queues with SQS
+Just like with Bref, you may [execute console commands](https://bref.sh/docs/runtimes/console.html).
 
-This package lets you process jobs from SQS queues on AWS Lambda by integrating with Laravel Queues and its job system. A deployable example is available in the [bref/examples repository](https://github.com/brefphp/examples/tree/master/Laravel/queues).
+```
+vendor/bin/bref cli <service>-<stage>-cli -- route:list
 
-For example, given [a `ProcessPodcast` job](https://laravel.com/docs/7.x/queues#class-structure):
-
-```php
-<?php declare(strict_types=1);
-
-namespace App\Jobs;
-
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-
-class ProcessPodcast implements ShouldQueue
-{
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    /** @var int */
-    private $podcastId;
-
-    public function __construct(int $podcastId)
-    {
-        $this->podcastId = $podcastId;
-    }
-
-    public function handle(): void
-    {
-        // process the job
-    }
-}
+vendor/bin/bref cli example-staging-cli -- route:list
 ```
 
-We can dispatch this job to SQS [just like any Laravel job](https://laravel.com/docs/7.x/queues#dispatching-jobs):
+### Maintenance mode
 
-```php
-ProcessPodcast::dispatch($podcastId);
-```
+Similar to the `php artisan down` command, you may put your app into maintenance mode. All that's required is setting the `MAINTENANCE_MODE` environment variable:
 
-The job will be pushed to SQS. Now, instead of running the `php artisan queue:work` command, SQS will directly trigger our **handler** on AWS Lambda to process our job immediately.
-
-### Setup
-
-#### SQS
-
-To create the SQS queue (and the permissions for your Lambda to read/write to it), you can either do that manually, or use `serverless.yml`.
-
-To make things simpler, we will use the [Serverless Lift](https://github.com/getlift/lift) plugin to create and configure the SQS queue.
-
-1. [Install Lift](https://github.com/getlift/lift#installation)
-
-    ```bash
-    serverless plugin install -n serverless-lift
-    ```
-
-2. Use [the Queue construct](https://github.com/getlift/lift/blob/master/docs/queue.md) in `serverless.yml`:
-
-```yaml
+```yml
 provider:
-    ...
-    environment:
-        APP_ENV: production
-        QUEUE_CONNECTION: sqs
-        SQS_QUEUE: ${construct:jobs.queueUrl}
-
-functions:
-    ...
-
-constructs:
-    jobs:
-        type: queue
-        worker:
-            handler: worker.php
-            layers:
-                - ${bref:layer.php-74}
+  environment:
+    MAINTENANCE_MODE: ${param:maintenance, null}
 ```
 
-We define Laravel environment variables in `provider.environment` (this could also be done in the deployed `.env` file):
+You can then quickly put all functions into maintenance without running a full build and CloudFormation deploy:
 
-- `QUEUE_CONNECTION: sqs` enables the SQS queue connection
-- `SQS_QUEUE: ${construct:jobs.queueUrl}` passes the URL of the created SQS queue
-
-If you want to create the SQS queue manually, you will need to set these variables.
-
-**Watch out**: in the example above, we set the full SQS queue URL in the `SQS_QUEUE` variable. If you set only the queue name (which is also valid), you will need to set the `SQS_PREFIX` environment variable too.
-
-Note that on AWS Lambda, you do not need to create `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` variables: these access keys are created automatically by Lambda and available through those variables. There is, however, one thing missing: the `AWS_SESSION_TOKEN` variable is not taken into account by Laravel by default (comment on [this issue](https://github.com/laravel/laravel/pull/5138#issuecomment-624025825) if you want this fixed). In the meantime, **edit `config/queue.php` to add this line**:
-
-```diff
-        'sqs' => [
-            'driver' => 'sqs',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-+           'token' => env('AWS_SESSION_TOKEN'),
-            'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
+```
+serverless deploy function --function=web --update-config --param="maintenance=1"
+serverless deploy function --function=cli --update-config --param="maintenance=1"
+serverless deploy function --function=queue --update-config --param="maintenance=1"
 ```
 
-Finally, create the `worker.php` file. This is the file that will handle SQS events in AWS Lambda:
+To take your app out of maintenance mode, simply omit the parameter: 
 
-```bash
-php artisan vendor:publish --tag=serverless-worker
+```
+serverless deploy function --function=web --update-config
+serverless deploy function --function=cli --update-config
+serverless deploy function --function=queue --update-config
 ```
 
-That's it! Anytime a job is pushed to the SQS queue, SQS will invoke `worker.php` on AWS Lambda and our job will be executed.
+One caveat with the `--update-config` flag is that it doesn't do objects in `environment` variables in the `serverless.yml`:
 
-#### Differences and limitations
-
-The SQS + Lambda integration already has a retry mechanism (with a "dead letter queue" that stores failed messages). This is why those mechanisms from Laravel are not used at all.
-
-The Lift "queue" construct automatically configures failed messages to be retried 3 times. Read [the Lift Queue documentation](https://github.com/getlift/lift/blob/master/docs/queue.md) for more details and options.
-
-Note: for those familiar with Lambda, you may know that batch processing implies that any failed job will mark all the other jobs of the batch as "failed". However, Laravel manually marks successful jobs as "completed" (i.e. those are properly deleted from SQS).
-
-#### Failed messages
-
-Lift provides CLI commands to list and manage failed messages. For example:
-
-```bash
-# List failed messages
-serverless jobs:failed
-
-# Purge failed messages
-serverless jobs:failed:purge
-
-# Retry failed messages
-serverless jobs:failed:retry
+```yml
+provider:
+  environment:
+    SQS_QUEUE: ${self:service}-${sls:stage}    # good
+    SQS_QUEUE: !Ref QueueName                  # bad
+    SQS_QUEUE:                                 # bad
+      Ref: QueueName
 ```
-
-Read more [about Lift Queue commands](https://github.com/getlift/lift/blob/master/docs/queue.md#commands).

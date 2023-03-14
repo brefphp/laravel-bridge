@@ -1,0 +1,82 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        type: choice
+        required: true
+        options:
+          - staging
+          - production
+
+concurrency: deploy-${{ github.event.inputs.environment }}
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Serverless CLI
+        run: npm install -g serverless serverless-scriptable-plugin
+
+      - name: Install AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.1
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        env:
+          COMPOSER_MIRROR_PATH_REPOS: 1
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
+
+      - name: Build assets
+        run: npm ci && npm run production
+
+      - name: Build and deploy
+        run: |
+          php artisan event:cache
+          serverless config credentials --provider aws --key $AWS_ACCESS_KEY_ID --secret="$AWS_SECRET_ACCESS_KEY"
+          serverless deploy --stage=$ENVIRONMENT
+
+      - name: Delete old assets
+        run: |
+          sudo apt-get update
+          sudo apt-get install jq
+
+          wget --no-verbose https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64 -O /usr/bin/yq
+          chmod +x /usr/bin/yq
+
+          bucket=$(yq '.params.default.bucket' serverless.yml)
+          assets_bucket=$(yq '.params.default.assetsBucket' serverless.yml)
+
+          deployments=$(
+            aws s3api list-objects \
+              --bucket "$bucket" \
+              --prefix "serverless/relay/" \
+              --query "Contents[?contains(Key, 'serverless-state.json')].[Key]"
+          )
+
+          for key in $(echo "$deployments" | jq -r '.[] | .[0]'); do
+            deployment=$(aws s3 cp s3://$bucket/$key -)
+            url=$(echo "$deployment" | jq -r '.service.provider.environment.ASSET_URL')
+            excludes+="--exclude=${url##*/}/* "
+          done
+
+          aws s3 rm s3://$assets_bucket/ --recursive $excludes
