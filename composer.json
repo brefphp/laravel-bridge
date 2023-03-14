@@ -13,7 +13,7 @@
     "require": {
         "php": "^8.0",
         "aws/aws-sdk-php": "^3.222",
-        "bref/bref": "^2.0.0-beta14",
+        "bref/bref": "^2.0",
         "illuminate/container": "^8.0 || ^9.0 || ^10.0",
         "illuminate/contracts": "^8.0 || ^9.0 || ^10.0",
         "illuminate/http": "^8.0 || ^9.0 || ^10.0",
