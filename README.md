@@ -1,20 +1,14 @@
 # Bref Laravel Bridge
 
-An advanced Laravel integration for Bref, including Octane support.
+Run Laravel on AWS Lambda with [Bref](https://bref.sh/).
 
-This project is largely based on code from [PHP Runtimes](https://github.com/php-runtime/runtime), [Laravel Vapor](https://github.com/laravel/vapor-core) and [Bref's Laravel Bridge](https://github.com/brefphp/laravel-bridge).
+Read the [Bref documentation for Laravel](https://bref.sh/docs/frameworks/laravel.html) to get started.
 
 ## Background
 
-Why does this exist and why not just use [Laravel Vapor](https://vapor.laravel.com)? Vapor is fantastic, easy to use and the better choice for situations, its $399/year pay for itself not having to maintain your own infrastructure.
+This package was originally created by [CacheWerk](https://cachewerk.com/) (the creators of [Relay](https://relay.so)), maintained by [Till Kruss](https://github.com/tillkruss) and [George Boot](https://github.com/georgeboot). It was published at [cachewerk/bref-laravel-bridge](https://github.com/cachewerk/bref-laravel-bridge).
 
-For [Relay](https://relay.so)'s API however we needed something that 1) **is open source** _(Vapor's API is a black box)_, 2) **is secure** _(Vapor has admin access to databases and environment variables)_ and 3) doesn't leave us at the **mercy of a support team** _(Vapor has no enterprise support)_. We also didn't want to be forced to use CloudFront on top of Cloudflare, but that's just nerdy preference.
-
-We needed an open source solution that gives us more fine-grained control and is secure.
-
-[Bref](https://bref.sh) + [Serverless Framework](https://www.serverless.com/) is exactly that, however Bref's Laravel integration is rather basic, it easily exposes SSM secrets and it doesn't support Laravel Octane.
-
-So we built this.
+For Bref 2.0, the contributors joined the Bref organization and the CacheWerk bridge was merged into this repository to create v2.0 of the bridge.
 
 ## Installation
 
