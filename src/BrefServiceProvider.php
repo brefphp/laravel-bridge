@@ -45,16 +45,8 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
-        Config::set('cache.stores.dynamodb.key');
-        Config::set('cache.stores.dynamodb.secret');
         Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
-
-        Config::set('filesystems.disks.s3.key');
-        Config::set('filesystems.disks.s3.secret');
         Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
-
-        Config::set('queue.connections.sqs.key');
-        Config::set('queue.connections.sqs.secret');
         Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
 
         $this->app->when(QueueHandler::class)
