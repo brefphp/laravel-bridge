@@ -65,7 +65,7 @@ class BrefServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../stubs/serverless.yml' => config_path('serverless.yml'),
+                __DIR__ . '/../stubs/serverless.yml' => base_path('serverless.yml'),
             ], 'serverless-config');
 
             $this->publishes([
