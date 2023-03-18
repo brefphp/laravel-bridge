@@ -34,7 +34,7 @@ class BrefServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
+        $this->app->useStoragePath(StorageDirectories::Path);
 
         $this->fixDefaultConfiguration();
 
@@ -61,7 +61,7 @@ class BrefServiceProvider extends ServiceProvider
      */
     public function boot(Dispatcher $dispatcher, LogManager $logManager, FailedJobProviderInterface $queueFailer)
     {
-        $this->app->useStoragePath(StorageDirectories::Path);
+        $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
