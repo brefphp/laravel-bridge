@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [v2.1.0] - 2023-03-20
+### Added
+* Allow running Tinker commands on Lambda by @mnapoli in https://github.com/brefphp/laravel-bridge/pull/104
+
+### Changed
+* Fix default branch in CI by @szepeviktor in https://github.com/brefphp/laravel-bridge/pull/97
+* Don't unset AWS key and secrets by @georgeboot in https://github.com/brefphp/laravel-bridge/pull/98
+* Fix the creation of `serverless.yml` to the correct directory by @mnapoli in https://github.com/brefphp/laravel-bridge/pull/99
+* Fix service provider running order by @georgeboot in https://github.com/brefphp/laravel-bridge/pull/102
+* Improve the default `serverless.yml` config by @mnapoli in https://github.com/brefphp/laravel-bridge/pull/100
+
 ## [v2.0.0]
 ### Breaking Changes
 - Logs are now written in plain text by default instead of JSON. To enable JSON logs, set `channels.stderr.formatter` to `Monolog\Formatter\JsonFormatter::class` in `config/logging.php`.
@@ -11,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - If you use Octane, remove the `bref/runtime.php` file, remove the `APP_RUNTIME` environment variable (in `serverless.yml`) and set your Octane function handler to: `handler: CacheWerk\BrefLaravelBridge\Http\OctaneHandler`.
 - If you use Laravel Queues, remove the `bref/runtime.php` file, remove the `APP_RUNTIME` environment variable (in `serverless.yml`) and set your Octane function handler to: `handler: CacheWerk\BrefLaravelBridge\Queue\QueueHandler`.
 
-## [Unreleased]
 ## [v0.3.0] - 2022-11-15
 ### Changed
 - Use Laravel-native queue handler ([#13](https://github.com/cachewerk/bref-laravel-bridge/pull/13))
