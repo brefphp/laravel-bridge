@@ -6,7 +6,7 @@ provider:
     region: us-east-1
     # Environment variables
     environment:
-        APP_ENV: production
+        APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
 
 package:
     # Files and directories to exclude from deployment
