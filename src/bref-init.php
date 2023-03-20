@@ -15,6 +15,11 @@ Bref::beforeStartup(static function () {
 
     MaintenanceMode::setUp();
 
+    // Move the location of the PsySH config cache to `/tmp` (because it is writable)
+    $xdgHome = StorageDirectories::Path . '/psysh';
+    $_SERVER['XDG_CONFIG_HOME'] = $_ENV['XDG_CONFIG_HOME'] = $xdgHome;
+    putenv("XDG_CONFIG_HOME=$xdgHome");
+
     $defaultConfigCachePath = $_SERVER['LAMBDA_TASK_ROOT'] . '/bootstrap/cache/config.php';
 
     if (file_exists($defaultConfigCachePath)) {

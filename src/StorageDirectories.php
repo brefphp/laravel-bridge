@@ -26,6 +26,7 @@ class StorageDirectories
             self::Path . '/bootstrap/cache',
             self::Path . '/framework/cache',
             self::Path . '/framework/views',
+            self::Path . '/psysh',
         ];
 
         $directories = array_filter($directories, static fn ($directory) => ! is_dir($directory));
