@@ -31,7 +31,7 @@ class StorageDirectories
 
         $directories = array_filter($directories, static fn ($directory) => ! is_dir($directory));
 
-        if (count($directories)) {
+        if (count($directories) && defined('STDERR')) {
             fwrite(STDERR, 'Creating storage directories: ' . implode(', ', $directories) . PHP_EOL);
         }
 
