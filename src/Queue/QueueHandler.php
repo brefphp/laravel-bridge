@@ -50,7 +50,6 @@ class QueueHandler extends SqsHandler
      * @param  \Illuminate\Container\Container  $container
      * @param  \Illuminate\Contracts\Events\Dispatcher  $events
      * @param  \Illuminate\Contracts\Debug\ExceptionHandler  $exceptions
-     * @param  \Illuminate\Contracts\Cache\Repository  $cache
      * @param  string  $connection
      * @return void
      */
@@ -58,7 +57,6 @@ class QueueHandler extends SqsHandler
         protected Container $container,
         protected Dispatcher $events,
         protected ExceptionHandler $exceptions,
-        protected Cache $cache,
         protected string $connection,
     ) {
         $queue = $container->make(QueueManager::class)
@@ -86,7 +84,10 @@ class QueueHandler extends SqsHandler
             'isDownForMaintenance' => fn () => MaintenanceMode::active(),
         ]);
 
-        $worker->setCache($this->cache);
+        /** @var Cache $cache */
+        $cache = $this->container->make(Cache::class);
+
+        $worker->setCache($cache);
 
         foreach ($event->getRecords() as $sqsRecord) {
             $timeout = $this->calculateJobTimeout($context->getRemainingTimeInMillis());
