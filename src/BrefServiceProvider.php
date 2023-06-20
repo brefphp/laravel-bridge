@@ -142,5 +142,4 @@ class BrefServiceProvider extends ServiceProvider
             Config::set('logging.default', 'stderr');
         }
     }
-
 }
