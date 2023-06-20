@@ -11,13 +11,13 @@ use Bref\Event\Sqs\SqsEvent;
 use Bref\Event\Sqs\SqsHandler;
 use Bref\Event\Sqs\SqsRecord;
 
-use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Queue\SqsQueue;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\WorkerOptions;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Cache\Repository as Cache;
 
 use Bref\LaravelBridge\MaintenanceMode;
 
