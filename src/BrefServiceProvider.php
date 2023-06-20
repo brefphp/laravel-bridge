@@ -39,14 +39,17 @@ class BrefServiceProvider extends ServiceProvider
         $this->fixDefaultConfiguration();
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
-        
+
         Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
-        
+
         Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
-        
-        if (Config::get('bref.aws_session_tokens', true)) {
-            $this->fixAWSCredentials();
+
+        if (Config::get('bref.use_session_tokens', true)) {
+            Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
+            Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
+            Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
+            Config::set('services.ses.token', env('AWS_SESSION_TOKEN'));
         }
 
         $this->app->when(QueueHandler::class)
@@ -140,16 +143,4 @@ class BrefServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Import AWS Session token from environment variables to configuration.
-     *
-     * @return void
-     */
-    protected function fixAWSCredentials(): void
-    {
-        Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
-        Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
-        Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
-        Config::set('services.ses.token', env('AWS_SESSION_TOKEN'));
-    }
 }

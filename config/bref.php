@@ -32,7 +32,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Fix AWS role credentials
+    | Use AWS credential tokens
     |--------------------------------------------------------------------------
     |
     | Laravel does not use AWS_SESSION_TOKEN environment vars by default
@@ -41,6 +41,6 @@ return [
     |
     */
 
-    'aws_session_tokens' => true,
+    'use_session_tokens' => true,
 
 ];
