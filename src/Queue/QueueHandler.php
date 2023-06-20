@@ -84,10 +84,9 @@ class QueueHandler extends SqsHandler
             'isDownForMaintenance' => fn () => MaintenanceMode::active(),
         ]);
 
-        /** @var Cache $cache */
-        $cache = $this->container->make(Cache::class);
-
-        $worker->setCache($cache);
+        $worker->setCache(
+            $this->container->make(Cache::class)
+        );
 
         foreach ($event->getRecords() as $sqsRecord) {
             $timeout = $this->calculateJobTimeout($context->getRemainingTimeInMillis());
