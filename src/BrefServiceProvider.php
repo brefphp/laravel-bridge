@@ -45,7 +45,7 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
-        if (Config::get('bref.use_session_tokens', true)) {
+        if (Config::get('bref.use_session_token', true)) {
             Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
             Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
             Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
