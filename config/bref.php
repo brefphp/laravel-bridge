@@ -30,4 +30,17 @@ return [
 
     'request_context' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Fix AWS role credentials
+    |--------------------------------------------------------------------------
+    |
+    | Laravel does not use AWS_SESSION_TOKEN environment vars by default
+    | Bref can automatically add these tokens into your configuration
+    | If you are not using AWS Roles you may need to disable this.
+    |
+    */
+
+    'aws_session_tokens' => true,
+
 ];
