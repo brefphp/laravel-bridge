@@ -17,6 +17,7 @@ use Illuminate\Queue\WorkerOptions;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Cache\Repository as Cache;
 
 use Bref\LaravelBridge\MaintenanceMode;
 
@@ -78,9 +79,14 @@ class QueueHandler extends SqsHandler
      */
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        /** @var Worker $worker */
         $worker = $this->container->makeWith(Worker::class, [
             'isDownForMaintenance' => fn () => MaintenanceMode::active(),
         ]);
+
+        $worker->setCache(
+            $this->container->make(Cache::class)
+        );
 
         foreach ($event->getRecords() as $sqsRecord) {
             $timeout = $this->calculateJobTimeout($context->getRemainingTimeInMillis());
