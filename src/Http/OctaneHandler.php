@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OctaneHandler extends HttpHandler
 {
-    private OctaneClient $octaneClient;
+    protected OctaneClient $octaneClient;
 
     public function __construct()
     {
