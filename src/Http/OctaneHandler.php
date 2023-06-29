@@ -16,12 +16,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OctaneHandler extends HttpHandler
 {
-    protected OctaneClient $octaneClient;
+    private OctaneClient $octaneClient;
 
-    public function __construct()
+    public function __construct(?string $path = null)
     {
         $this->octaneClient = new OctaneClient(
-            getcwd(),
+            $path ?? getcwd(),
             (bool) ($_ENV['OCTANE_PERSIST_DATABASE_SESSIONS'] ?? false)
         );
     }
