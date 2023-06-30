@@ -18,10 +18,10 @@ class OctaneHandler extends HttpHandler
 {
     private OctaneClient $octaneClient;
 
-    public function __construct()
+    public function __construct(?string $path = null)
     {
         $this->octaneClient = new OctaneClient(
-            getcwd(),
+            $path ?? getcwd(),
             (bool) ($_ENV['OCTANE_PERSIST_DATABASE_SESSIONS'] ?? false)
         );
     }
