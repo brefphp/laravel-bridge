@@ -48,10 +48,9 @@ If you want to run the HTTP application with Laravel Octane, you will to change 
 functions:
     web:
         handler: Bref\LaravelBridge\Http\OctaneHandler
+        runtime: php-81
         environment:
             BREF_LOOP_MAX: 250
-        layers:
-            - ${bref:layer.php-81}
         # ...
 ```
 
@@ -63,9 +62,8 @@ If you want to run Laravel Queues, you will need to add a `queue` function to `s
 functions:
     queue:
         handler: Bref\LaravelBridge\Queue\QueueHandler
+        runtime: php-81
         timeout: 59 # in seconds
-        layers:
-            - ${bref:layer.php-81}
         events:
             -   sqs:
                     arn: !GetAtt Queue.Arn
