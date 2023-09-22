@@ -7,6 +7,8 @@ use Bref\LaravelBridge\MaintenanceMode;
 use Bref\LaravelBridge\StorageDirectories;
 
 Bref::beforeStartup(static function () {
+    $laravelHome = __DIR__ . '/../../../../';
+    
     if (! defined('STDERR')) {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
@@ -26,7 +28,7 @@ Bref::beforeStartup(static function () {
         return;
     }
 
-    $defaultConfigCachePath = $_SERVER['LAMBDA_TASK_ROOT'] . '/bootstrap/cache/config.php';
+    $defaultConfigCachePath = $laravelHome . '/bootstrap/cache/config.php';
 
     if (file_exists($defaultConfigCachePath)) {
         return;
@@ -43,7 +45,7 @@ Bref::beforeStartup(static function () {
         fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
 
         // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
-        passthru('php artisan config:cache 1>&2');
+        passthru("php {$laravelHome}artisan config:cache 1>&2");
     }
 });
 
