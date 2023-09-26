@@ -95,8 +95,8 @@ class HandlerResolver implements ContainerInterface
     {
         $bootstrapFile = getpwd() . '/bootstrap/app.php';
 
-        if (file_exists(getpwd() . '/bootstrap/app.php')) {
-            return getpwd() . '/bootstrap/app.php';
+        if (file_exists($bootstrapFile) {
+            return $bootstrapFile;
         }
 
         if (file_exists(__DIR__ . '/../../../../bootstrap/app.php')) {
