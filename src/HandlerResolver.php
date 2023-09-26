@@ -73,7 +73,7 @@ class HandlerResolver implements ContainerInterface
         }
 
         // ./vendor/bref/laravel-bridge/src/
-        $bootstrapFile = __DIR__ . '/../../../../bootstrap/app.php';
+        $bootstrapFile = realpath(__DIR__ . '/../../../../bootstrap/app.php');
 
         if (! file_exists($bootstrapFile)) {
             throw new RuntimeException(
