@@ -72,14 +72,7 @@ class HandlerResolver implements ContainerInterface
             return $this->laravel;
         }
 
-        // ./vendor/bref/laravel-bridge/src/
-        $bootstrapFile = realpath(__DIR__ . '/../../../../bootstrap/app.php');
-
-        if (! file_exists($bootstrapFile)) {
-            throw new RuntimeException(
-                "Unable to locate `{$bootstrapFile}`: Bref tried to load that file to retrieve the Laravel app"
-            );
-        }
+        $bootstrapFile = $this->resolveBootstrapLocation();
 
         $this->laravel = require $bootstrapFile;
 
@@ -96,5 +89,22 @@ class HandlerResolver implements ContainerInterface
         $kernel->bootstrap();
 
         return $this->laravel;
+    }
+
+    private function resolveBootstrapLocation(): string
+    {
+        $bootstrapFile = getpwd() . '/bootstrap/app.php');
+
+        if (file_exists(getpwd() . '/bootstrap/app.php')) {
+            return getpwd() . '/bootstrap/app.php';
+        }
+
+        if (file_exists(__DIR__ . '/../../../../bootstrap/app.php')) {
+            return realpath(__DIR__ . '/../../../../bootstrap/app.php');
+        }
+
+        throw new RuntimeException(
+            "Unable to locate `{$bootstrapFile}`: Bref tried to load that file to retrieve the Laravel app"
+        );
     }
 }
