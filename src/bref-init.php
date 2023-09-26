@@ -7,7 +7,7 @@ use Bref\LaravelBridge\MaintenanceMode;
 use Bref\LaravelBridge\StorageDirectories;
 
 Bref::beforeStartup(static function () {
-    $laravelHome = __DIR__ . '/../../../../';
+    $laravelHome = realpath(__DIR__ . '/../../../../');
 
     if (! defined('STDERR')) {
         define('STDERR', fopen('php://stderr', 'wb'));
