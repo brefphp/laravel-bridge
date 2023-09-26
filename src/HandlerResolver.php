@@ -93,7 +93,7 @@ class HandlerResolver implements ContainerInterface
 
     private function resolveBootstrapLocation(): string
     {
-        $bootstrapFile = getpwd() . '/bootstrap/app.php');
+        $bootstrapFile = getpwd() . '/bootstrap/app.php';
 
         if (file_exists(getpwd() . '/bootstrap/app.php')) {
             return getpwd() . '/bootstrap/app.php';
