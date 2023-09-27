@@ -99,6 +99,11 @@ class HandlerResolver implements ContainerInterface
             return $bootstrapFile;
         }
 
+        // Here we leave 4 levels of folder.
+        // 1 is the `src` folder inside Laravel Bridge
+        // 2 are `brefphp/laravel-bridge - the way Composer Packages are formed
+        // 1 is the `vendor` folder itself, giving a total of 4 levels.
+        // Once we're in the root of the Laravel project, we can navigate to `bootstrap/app.php` to locate the bootstrap file.
         if (file_exists(__DIR__ . '/../../../../bootstrap/app.php')) {
             return realpath(__DIR__ . '/../../../../bootstrap/app.php');
         }
