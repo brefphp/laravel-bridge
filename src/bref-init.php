@@ -28,7 +28,7 @@ Bref::beforeStartup(static function () {
         return;
     }
 
-    $defaultConfigCachePath = $laravelHome . '/bootstrap/cache/config.php'; 
+    $defaultConfigCachePath = $laravelHome . '/bootstrap/cache/config.php';
 
     if (file_exists($defaultConfigCachePath)) {
         return;
@@ -54,11 +54,11 @@ Bref::setContainer(static fn() => new HandlerResolver);
 function resolveBootstrapLocation(): string
 {
     $laravelHome = $_SERVER['LAMBDA_TASK_ROOT'] . '/bootstrap/cache/config.php';
-    
+
     if (file_exists($laravelHome)) {
         return $_SERVER['LAMBDA_TASK_ROOT'];
     }
 
-    // Going up 4 directories will get us from `vendor/brefphp/laravel-bridge/src` to the Laravel root folder 
+    // Going up 4 directories will get us from `vendor/brefphp/laravel-bridge/src` to the Laravel root folder
     return realpath(__DIR__ . '/../../../../');
 }

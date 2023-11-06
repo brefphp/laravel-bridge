@@ -99,8 +99,8 @@ class HandlerResolver implements ContainerInterface
             return $bootstrapFile;
         }
 
-        // Going up 4 directories will get us from `vendor/brefphp/laravel-bridge/src` 
-        // to the Laravel root folder so we can navigate to `bootstrap/app.php` 
+        // Going up 4 directories will get us from `vendor/brefphp/laravel-bridge/src`
+        // to the Laravel root folder so we can navigate to `bootstrap/app.php`
         if (file_exists(__DIR__ . '/../../../../bootstrap/app.php')) {
             return realpath(__DIR__ . '/../../../../bootstrap/app.php');
         }
