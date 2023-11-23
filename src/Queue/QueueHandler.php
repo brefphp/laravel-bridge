@@ -38,13 +38,6 @@ class QueueHandler extends SqsHandler
     protected const JOB_TIMEOUT_SAFETY_MARGIN = 1.0;
 
     /**
-     * The name of the SQS queue.
-     *
-     * @var string
-     */
-    protected string $queueName;
-
-    /**
      * Creates a new SQS queue handler instance.
      *
      * @param  \Illuminate\Container\Container  $container
@@ -66,7 +59,6 @@ class QueueHandler extends SqsHandler
             throw new RuntimeException('Default queue connection is not a SQS connection');
         }
 
-        $this->queueName = $queue->getQueue(null);
         $this->sqs = $queue->getSqs();
     }
 
@@ -124,7 +116,7 @@ class QueueHandler extends SqsHandler
             $this->sqs,
             $message,
             $this->connection,
-            $this->queueName,
+            $sqsRecord->getQueueName(),
         );
     }
 
