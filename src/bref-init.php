@@ -1,17 +1,17 @@
 <?php
 
 use Bref\Bref;
-use Bref\LaravelBridge\LaravelRootResolver;
+use Bref\LaravelBridge\LaravelPathFinder;
 use Bref\LaravelBridge\HandlerResolver;
 use Bref\LaravelBridge\MaintenanceMode;
 use Bref\LaravelBridge\StorageDirectories;
 
 Bref::beforeStartup(static function () {
-    $laravelRoot = LaravelRootResolver::resolvePath();
-
     if (! defined('STDERR')) {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
+
+    $laravelRoot = LaravelPathFinder::root();
 
     StorageDirectories::create();
 
@@ -45,7 +45,7 @@ Bref::beforeStartup(static function () {
         fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
 
         // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
-        passthru("php {$laravelRoot}artisan config:cache 1>&2");
+        passthru("php $laravelRoot/artisan config:cache 1>&2");
     }
 });
 
