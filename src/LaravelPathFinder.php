@@ -15,12 +15,16 @@ final class LaravelPathFinder
     {
         $app = $_SERVER['LAMBDA_TASK_ROOT'] . '/bootstrap/app.php';
 
-        // If the config cache exists, we can assume that the Laravel root path is the same as the Lambda task root
+        // If the config cache exists, we can assume that the Laravel root path is the same as the Lambda task root.
+        // This may not be needed as the fallback "should" work in all cases, but we're keeping
+        // this as it's safer to keep 100% compatibility with the original implementation.
         if (file_exists($app)) {
             return $_SERVER['LAMBDA_TASK_ROOT'];
         }
 
-        // the fallback is going up 4 directories will get us from `vendor/brefphp/laravel-bridge/src` to the Laravel root folder
+        // If Laravel is installed on a sub-folder, we can navigate from where we are
+        // (inside composer) to the root of Laravel.
+        // We will go up 4 directories, represented by `vendor/brefphp/laravel-bridge/src`.
         return realpath(__DIR__ . '/../../../../');
     }
 
