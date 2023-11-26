@@ -11,7 +11,14 @@ Bref::beforeStartup(static function () {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
 
-    StorageDirectories::create();
+    $config = include(__DIR__ . '/../config/bref.php');
+    $extraConfigPath = $_SERVER['LAMBDA_TASK_ROOT'] . '/config/bref.php';
+    if (file_exists($extraConfigPath)) {
+        $config = array_merge($config, include($extraConfigPath));
+    }
+    $shouldLogInit = (bool)($config['log_init'] ?? true);
+
+    StorageDirectories::create($shouldLogInit);
 
     MaintenanceMode::setUp();
 
@@ -40,10 +47,13 @@ Bref::beforeStartup(static function () {
         $_SERVER['APP_CONFIG_CACHE'] = $_ENV['APP_CONFIG_CACHE'] = $newConfigCachePath;
         putenv("APP_CONFIG_CACHE={$newConfigCachePath}");
 
-        fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
+        if ($shouldLogInit) {
+            fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
+        }
 
         // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
-        passthru('php artisan config:cache 1>&2');
+        $outputDestination = $shouldLogInit ? '1>&2' : '> /dev/null';
+        passthru("php artisan config:cache {$outputDestination}");
     }
 });
 

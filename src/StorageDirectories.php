@@ -18,7 +18,7 @@ class StorageDirectories
      *
      * @return void
      */
-    public static function create()
+    public static function create(bool $shouldLog)
     {
         $directories = [
             // self::Path . '/app',
@@ -31,7 +31,7 @@ class StorageDirectories
 
         $directories = array_filter($directories, static fn ($directory) => ! is_dir($directory));
 
-        if (count($directories) && defined('STDERR')) {
+        if (count($directories) && defined('STDERR') && $shouldLog) {
             fwrite(STDERR, 'Creating storage directories: ' . implode(', ', $directories) . PHP_EOL);
         }
 

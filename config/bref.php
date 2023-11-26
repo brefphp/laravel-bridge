@@ -30,4 +30,15 @@ return [
 
     'request_context' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Log output at initialization
+    |--------------------------------------------------------------------------
+    |
+    | Here you can choose whether to log the Laravel application initialization
+    | process performed by Bref. These logs are output before the Laravel
+    | application starts, so they are not formatted by `logging.default`.
+    |
+    */
+    'log_init' => true,
 ];
