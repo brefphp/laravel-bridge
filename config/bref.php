@@ -40,5 +40,5 @@ return [
     | application starts, so they are not formatted by `logging.default`.
     |
     */
-    'log_init' => true,
+    'log_init' => env('BREF_LARAVEL_BRIDGE_LOG_INIT', true),
 ];
