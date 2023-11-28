@@ -11,11 +11,6 @@ Bref::beforeStartup(static function () {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
 
-    // Save init log by default if environment variable is not set
-    $shouldLogInit =
-        getenv('BREF_LARAVEL_BRIDGE_LOG_INIT') === false ? true
-        : (bool) getenv('BREF_LARAVEL_BRIDGE_LOG_INIT');
-
     StorageDirectories::create();
 
     MaintenanceMode::setUp();
@@ -45,12 +40,13 @@ Bref::beforeStartup(static function () {
         $_SERVER['APP_CONFIG_CACHE'] = $_ENV['APP_CONFIG_CACHE'] = $newConfigCachePath;
         putenv("APP_CONFIG_CACHE={$newConfigCachePath}");
 
-        if ($shouldLogInit) {
+        $outputDestination = '> /dev/null';
+        if (getenv('BREF_LARAVEL_BRIDGE_LOG_INIT')) {
             fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
+            // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
+            $outputDestination = '1>&2';
         }
 
-        // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
-        $outputDestination = $shouldLogInit ? '1>&2' : '> /dev/null';
         passthru("php artisan config:cache {$outputDestination}");
     }
 });
