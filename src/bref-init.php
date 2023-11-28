@@ -16,7 +16,7 @@ Bref::beforeStartup(static function () {
         getenv('BREF_LARAVEL_BRIDGE_LOG_INIT') === false ? true
         : (bool) getenv('BREF_LARAVEL_BRIDGE_LOG_INIT');
 
-    StorageDirectories::create($shouldLogInit);
+    StorageDirectories::create();
 
     MaintenanceMode::setUp();
 
