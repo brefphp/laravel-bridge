@@ -11,12 +11,10 @@ Bref::beforeStartup(static function () {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
 
-    $config = include(__DIR__ . '/../config/bref.php');
-    $extraConfigPath = $_SERVER['LAMBDA_TASK_ROOT'] . '/config/bref.php';
-    if (file_exists($extraConfigPath)) {
-        $config = array_merge($config, include($extraConfigPath));
-    }
-    $shouldLogInit = (bool)($config['log_init'] ?? true);
+    // Save init log by default if environment variable is not set
+    $shouldLogInit =
+        getenv('BREF_LARAVEL_BRIDGE_LOG_INIT') === false ? true
+        : (bool) getenv('BREF_LARAVEL_BRIDGE_LOG_INIT');
 
     StorageDirectories::create($shouldLogInit);
 
