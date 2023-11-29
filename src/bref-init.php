@@ -41,7 +41,7 @@ Bref::beforeStartup(static function () {
         putenv("APP_CONFIG_CACHE={$newConfigCachePath}");
 
         $outputDestination = '> /dev/null';
-        if (getenv('BREF_LARAVEL_BRIDGE_LOG_INIT')) {
+        if (getenv('BREF_LARAVEL_LOG_INIT')) {
             fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
             // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
             $outputDestination = '1>&2';
