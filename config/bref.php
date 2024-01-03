@@ -30,4 +30,20 @@ return [
 
     'request_context' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Log Level
+    |--------------------------------------------------------------------------
+    |
+    | Here you can configure which job events will trigger a log message.
+    |
+    */
+
+    'logger_jobs' => [
+        'processing' => true,
+        'processed' => true,
+        'failed' => true,
+        'failed_details' => true,
+    ],    
+
 ];
