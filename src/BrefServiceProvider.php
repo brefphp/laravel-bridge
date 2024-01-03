@@ -74,35 +74,43 @@ class BrefServiceProvider extends ServiceProvider
             ], 'bref-config');
         }
 
-        $dispatcher->listen(
-            fn (JobProcessing $event) => $logManager->info(
-                "Processing job {$event->job->getJobId()}",
-                ['name' => $event->job->resolveName()]
-            )
-        );
+        if(config('bref.logger_jobs.processing', true)) {
+            $dispatcher->listen(
+                fn(JobProcessing $event) => $logManager->info(
+                    "Processing job {$event->job->getJobId()}",
+                    ['name' => $event->job->resolveName()]
+                )
+            );
+        }
 
-        $dispatcher->listen(
-            fn (JobProcessed $event) => $logManager->info(
-                "Processed job {$event->job->getJobId()}",
-                ['name' => $event->job->resolveName()]
-            )
-        );
+        if(config('bref.logger_jobs.processed', true)) {
+            $dispatcher->listen(
+                fn(JobProcessed $event) => $logManager->info(
+                    "Processed job {$event->job->getJobId()}",
+                    ['name' => $event->job->resolveName()]
+                )
+            );
+        }
 
-        $dispatcher->listen(
-            fn (JobExceptionOccurred $event) => $logManager->info(
-                "Job failed {$event->job->getJobId()}",
-                ['name' => $event->job->resolveName()]
-            )
-        );
+        if(config('bref.logger_jobs.failed', true)) {
+            $dispatcher->listen(
+                fn(JobExceptionOccurred $event) => $logManager->info(
+                    "Job failed {$event->job->getJobId()}",
+                    ['name' => $event->job->resolveName()]
+                )
+            );
+        }
 
-        $dispatcher->listen(
-            fn (JobFailed $event) => $queueFailer->log(
-                $event->connectionName,
-                $event->job->getQueue(),
-                $event->job->getRawBody(),
-                $event->exception
-            )
-        );
+        if(config('bref.logger_jobs.failed_details', true)) {
+            $dispatcher->listen(
+                fn(JobFailed $event) => $queueFailer->log(
+                    $event->connectionName,
+                    $event->job->getQueue(),
+                    $event->job->getRawBody(),
+                    $event->exception
+                )
+            );
+        }
     }
 
     /**
