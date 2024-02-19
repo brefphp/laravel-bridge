@@ -42,10 +42,14 @@ Bref::beforeStartup(static function () {
         $_SERVER['APP_CONFIG_CACHE'] = $_ENV['APP_CONFIG_CACHE'] = $newConfigCachePath;
         putenv("APP_CONFIG_CACHE={$newConfigCachePath}");
 
-        fwrite(STDERR, "Running 'php $laravelRoot/artisan config:cache' to cache the Laravel configuration\n");
+        $outputDestination = '> /dev/null';
+        if (!getenv('BREF_LARAVEL_OMIT_INITLOG')) {
+            fwrite(STDERR, "Running 'php artisan config:cache' to cache the Laravel configuration\n");
+            // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
+            $outputDestination = '1>&2';
+        }
 
-        // 1>&2 redirects the output to STDERR to avoid messing up HTTP responses with FPM
-        passthru("php $laravelRoot/artisan config:cache 1>&2");
+        passthru("php $laravelRoot/artisan config:cache {$outputDestination}");
     }
 });
 

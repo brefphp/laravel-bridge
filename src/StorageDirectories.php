@@ -31,7 +31,7 @@ class StorageDirectories
 
         $directories = array_filter($directories, static fn ($directory) => ! is_dir($directory));
 
-        if (count($directories) && defined('STDERR')) {
+        if (count($directories) && defined('STDERR') && !getenv('BREF_LARAVEL_OMIT_INITLOG')) {
             fwrite(STDERR, 'Creating storage directories: ' . implode(', ', $directories) . PHP_EOL);
         }
 

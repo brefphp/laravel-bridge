@@ -89,7 +89,7 @@ class BrefServiceProvider extends ServiceProvider
         );
 
         $dispatcher->listen(
-            fn (JobExceptionOccurred $event) => $logManager->info(
+            fn (JobExceptionOccurred $event) => $logManager->error(
                 "Job failed {$event->job->getJobId()}",
                 ['name' => $event->job->resolveName()]
             )
