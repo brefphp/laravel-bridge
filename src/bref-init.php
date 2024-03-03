@@ -1,7 +1,7 @@
 <?php
 
 use Bref\Bref;
-
+use Bref\LaravelBridge\LaravelPathFinder;
 use Bref\LaravelBridge\HandlerResolver;
 use Bref\LaravelBridge\MaintenanceMode;
 use Bref\LaravelBridge\StorageDirectories;
@@ -10,6 +10,8 @@ Bref::beforeStartup(static function () {
     if (! defined('STDERR')) {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
+
+    $laravelRoot = LaravelPathFinder::root();
 
     StorageDirectories::create();
 
@@ -26,7 +28,7 @@ Bref::beforeStartup(static function () {
         return;
     }
 
-    $defaultConfigCachePath = $_SERVER['LAMBDA_TASK_ROOT'] . '/bootstrap/cache/config.php';
+    $defaultConfigCachePath = $laravelRoot . '/bootstrap/cache/config.php';
 
     if (file_exists($defaultConfigCachePath)) {
         return;
@@ -47,7 +49,7 @@ Bref::beforeStartup(static function () {
             $outputDestination = '1>&2';
         }
 
-        passthru("php artisan config:cache {$outputDestination}");
+        passthru("php $laravelRoot/artisan config:cache {$outputDestination}");
     }
 });
 

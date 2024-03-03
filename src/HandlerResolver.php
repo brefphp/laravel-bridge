@@ -72,13 +72,7 @@ class HandlerResolver implements ContainerInterface
             return $this->laravel;
         }
 
-        $bootstrapFile = getcwd() . '/bootstrap/app.php';
-
-        if (! file_exists($bootstrapFile)) {
-            throw new RuntimeException(
-                "Unable to locate `{$bootstrapFile}`: Bref tried to load that file to retrieve the Laravel app"
-            );
-        }
+        $bootstrapFile = LaravelPathFinder::app();
 
         $this->laravel = require $bootstrapFile;
 
