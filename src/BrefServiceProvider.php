@@ -25,7 +25,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/bref.php', 'bref');
         $this->shareRequestContext();
@@ -45,10 +45,12 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
-        Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
-        Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
-        Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
-        Config::set('services.ses.token', env('AWS_SESSION_TOKEN'));
+        if (Config::get('bref.use_session_token', true)) {
+            Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
+            Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
+            Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
+            Config::set('services.ses.token', env('AWS_SESSION_TOKEN'));
+        }
 
         $this->app->when(QueueHandler::class)
             ->needs('$connection')
@@ -60,7 +62,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot(Dispatcher $dispatcher, LogManager $logManager, FailedJobProviderInterface $queueFailer)
+    public function boot(Dispatcher $dispatcher, LogManager $logManager, FailedJobProviderInterface $queueFailer): void
     {
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
@@ -110,7 +112,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function shareRequestContext()
+    protected function shareRequestContext(): void
     {
         if (! Config::get('bref.request_context')) {
             return;
@@ -130,7 +132,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function fixDefaultConfiguration()
+    protected function fixDefaultConfiguration(): void
     {
         if (Config::get('session.driver') === 'file') {
             Config::set('session.driver', 'cookie');
