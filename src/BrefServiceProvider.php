@@ -4,6 +4,8 @@ namespace Bref\LaravelBridge;
 
 use Bref\LaravelBridge\Queue\QueueHandler;
 
+use Illuminate\Console\Events\ScheduledTaskStarting;
+
 use Illuminate\Log\LogManager;
 
 use Illuminate\Support\Facades\Config;
@@ -103,6 +105,13 @@ class BrefServiceProvider extends ServiceProvider
                 $event->exception
             )
         );
+
+        if (file_exists('/proc/1/fd/1')) {
+            $dispatcher->listen(
+                ScheduledTaskStarting::class,
+                fn(ScheduledTaskStarting $task) => $task->task->appendOutputTo('/proc/1/fd/1'),
+            );
+        }
     }
 
     /**
