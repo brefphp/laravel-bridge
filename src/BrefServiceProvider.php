@@ -158,30 +158,39 @@ class BrefServiceProvider extends ServiceProvider
 
         // Patch SQS config
         foreach (Config::get('queue.connections') as $name => $connection) {
-            if ($connection['driver'] !== 'sqs') continue;
-
+            if ($connection['driver'] !== 'sqs') {
+                continue;
+            }
             // If a different key is in the config than in the environment variables
-            if ($connection['key'] && $connection['key'] !== $accessKeyId) continue;
+            if ($connection['key'] && $connection['key'] !== $accessKeyId) {
+                continue;
+            }
 
             Config::set("queue.connections.$name.token", $sessionToken);
         }
 
         // Patch S3 config
         foreach (Config::get('filesystems.disks') as $name => $disk) {
-            if ($disk['driver'] !== 's3') continue;
-
+            if ($disk['driver'] !== 's3') {
+                continue;
+            }
             // If a different key is in the config than in the environment variables
-            if ($disk['key'] && $disk['key'] !== $accessKeyId) continue;
+            if ($disk['key'] && $disk['key'] !== $accessKeyId) {
+                continue;
+            }
 
             Config::set("filesystems.disks.$name.token", $sessionToken);
         }
 
         // Patch DynamoDB config
         foreach (Config::get('cache.stores') as $name => $store) {
-            if ($store['driver'] !== 'dynamodb') continue;
-
+            if ($store['driver'] !== 'dynamodb') {
+                continue;
+            }
             // If a different key is in the config than in the environment variables
-            if ($store['key'] && $store['key'] !== $accessKeyId) continue;
+            if ($store['key'] && $store['key'] !== $accessKeyId) {
+                continue;
+            }
 
             Config::set("cache.stores.$name.token", $sessionToken);
         }
