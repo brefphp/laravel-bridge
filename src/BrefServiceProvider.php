@@ -47,10 +47,7 @@ class BrefServiceProvider extends ServiceProvider
         Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
-        Config::set('cache.stores.dynamodb.token', env('AWS_SESSION_TOKEN'));
-        Config::set('filesystems.disks.s3.token', env('AWS_SESSION_TOKEN'));
-        Config::set('queue.connections.sqs.token', env('AWS_SESSION_TOKEN'));
-        Config::set('services.ses.token', env('AWS_SESSION_TOKEN'));
+        $this->fixAwsCredentialsConfig();
 
         $this->app->when(QueueHandler::class)
             ->needs('$connection')
@@ -147,6 +144,51 @@ class BrefServiceProvider extends ServiceProvider
 
         if (Config::get('logging.default') === 'stack') {
             Config::set('logging.default', 'stderr');
+        }
+    }
+
+    private function fixAwsCredentialsConfig(): void
+    {
+        $accessKeyId = $_SERVER['AWS_ACCESS_KEY_ID'] ?? null;
+        $sessionToken = $_SERVER['AWS_SESSION_TOKEN'] ?? null;
+        // If we are not in a Lambda environment, we don't need to do anything
+        if (!$accessKeyId || ! $sessionToken) {
+            return;
+        }
+
+        // Patch SQS config
+        foreach (Config::get('queue.connections') as $name => $connection) {
+            if ($connection['driver'] !== 'sqs') continue;
+
+            // If a different key is in the config than in the environment variables
+            if ($connection['key'] && $connection['key'] !== $accessKeyId) continue;
+
+            Config::set("queue.connections.$name.token", $sessionToken);
+        }
+
+        // Patch S3 config
+        foreach (Config::get('filesystems.disks') as $name => $disk) {
+            if ($disk['driver'] !== 's3') continue;
+
+            // If a different key is in the config than in the environment variables
+            if ($disk['key'] && $disk['key'] !== $accessKeyId) continue;
+
+            Config::set("filesystems.disks.$name.token", $sessionToken);
+        }
+
+        // Patch DynamoDB config
+        foreach (Config::get('cache.stores') as $name => $store) {
+            if ($store['driver'] !== 'dynamodb') continue;
+
+            // If a different key is in the config than in the environment variables
+            if ($store['key'] && $store['key'] !== $accessKeyId) continue;
+
+            Config::set("cache.stores.$name.token", $sessionToken);
+        }
+
+        // Patch SES config
+        if (Config::get('services.ses.key') === $accessKeyId) {
+            Config::set('services.ses.token', $sessionToken);
         }
     }
 }
