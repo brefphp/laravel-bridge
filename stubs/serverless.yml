@@ -7,6 +7,7 @@ provider:
     # Environment variables
     environment:
         APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
+        SESSION_DRIVER: cookie # Change to database if you have set up a database
 
 package:
     # Files and directories to exclude from deployment
