@@ -17,6 +17,7 @@ package:
         - '!resources/assets/**'
         - '!storage/**'
         - '!tests/**'
+        - '!database/*.sqlite'
 
 functions:
 
