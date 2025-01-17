@@ -43,12 +43,20 @@ class ServeStaticAssets
     protected function getMimeType(string $file)
     {
         $mimeType = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file);
-        $mimeType = strstr($mimeType, ';', true);
 
-        return str_replace(
-            ['image/vnd.microsoft.icon'],
-            ['image/x-icon'],
-            $mimeType
-        );
+        if ($mimeType === 'image/vnd.microsoft.icon') {
+            return 'image/x-icon';
+        }
+
+        if ($mimeType !== 'text/plain') {
+            return $mimeType;
+        }
+
+        return match (pathinfo($file, PATHINFO_EXTENSION)) {
+            'js' => 'text/javascript',
+            'css' => 'text/css',
+            'html' => 'text/html',
+            default => 'text/plain',
+        };
     }
 }
