@@ -30,4 +30,16 @@ return [
 
     'request_context' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Jobs Logging
+    |--------------------------------------------------------------------------
+    |
+    | Here you can enable detailed logging of every job execution for debugging
+    | purposes. Note, that enabling this, will result in a high volume of log
+    | entries.
+    |
+    */
+
+    'jobs_logs' => false,
 ];
