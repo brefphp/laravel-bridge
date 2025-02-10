@@ -73,7 +73,7 @@ class BrefServiceProvider extends ServiceProvider
             ], 'bref-config');
         }
 
-        if (config('bref.jobs_logs', false)) {
+        if (config('bref.log_jobs', false)) {
             $this->enableDetailedJobLogging($dispatcher, $logManager, $queueFailer);
         }
 

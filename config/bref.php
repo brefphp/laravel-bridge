@@ -41,5 +41,5 @@ return [
     |
     */
 
-    'jobs_logs' => false,
+    'log_jobs' => false,
 ];
