@@ -85,7 +85,11 @@ class BrefServiceProvider extends ServiceProvider
         }
     }
 
-    private function enableDetailedJobLogging(Dispatcher $dispatcher, LogManager $logManager, FailedJobProviderInterface $queueFailer): void {
+    private function enableDetailedJobLogging(
+        Dispatcher $dispatcher,
+        LogManager $logManager,
+        FailedJobProviderInterface $queueFailer
+    ): void {
         $dispatcher->listen(
             fn (JobProcessing $event) => $logManager->info(
                 "Processing job {$event->job->getJobId()}",
