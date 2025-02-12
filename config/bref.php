@@ -30,4 +30,14 @@ return [
 
     'request_context' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Jobs Logging
+    |--------------------------------------------------------------------------
+    |
+    | Here you can disable detailed logging of every job execution.
+    |
+    */
+
+    'log_jobs' => true,
 ];

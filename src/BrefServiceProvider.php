@@ -73,6 +73,23 @@ class BrefServiceProvider extends ServiceProvider
             ], 'bref-config');
         }
 
+        if (config('bref.log_jobs', true)) {
+            $this->enableDetailedJobLogging($dispatcher, $logManager, $queueFailer);
+        }
+
+        if (file_exists('/proc/1/fd/1')) {
+            $dispatcher->listen(
+                ScheduledTaskStarting::class,
+                fn(ScheduledTaskStarting $task) => $task->task->appendOutputTo('/proc/1/fd/1'),
+            );
+        }
+    }
+
+    private function enableDetailedJobLogging(
+        Dispatcher $dispatcher,
+        LogManager $logManager,
+        FailedJobProviderInterface $queueFailer
+    ): void {
         $dispatcher->listen(
             fn (JobProcessing $event) => $logManager->info(
                 "Processing job {$event->job->getJobId()}",
@@ -102,13 +119,6 @@ class BrefServiceProvider extends ServiceProvider
                 $event->exception
             )
         );
-
-        if (file_exists('/proc/1/fd/1')) {
-            $dispatcher->listen(
-                ScheduledTaskStarting::class,
-                fn(ScheduledTaskStarting $task) => $task->task->appendOutputTo('/proc/1/fd/1'),
-            );
-        }
     }
 
     /**
