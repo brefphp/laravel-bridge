@@ -35,11 +35,9 @@ return [
     | Jobs Logging
     |--------------------------------------------------------------------------
     |
-    | Here you can enable detailed logging of every job execution for debugging
-    | purposes. Note, that enabling this, will result in a high volume of log
-    | entries.
+    | Here you can disable detailed logging of every job execution.
     |
     */
 
-    'log_jobs' => false,
+    'log_jobs' => true,
 ];
