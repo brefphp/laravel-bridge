@@ -172,7 +172,7 @@ class BrefServiceProvider extends ServiceProvider
                 continue;
             }
             // If a different key is in the config than in the environment variables
-            if (isset($connection['key']) && $connection['key'] !== $accessKeyId) {
+            if (!isset($connection['key']) || $connection['key'] !== $accessKeyId) {
                 continue;
             }
 
@@ -185,7 +185,7 @@ class BrefServiceProvider extends ServiceProvider
                 continue;
             }
             // If a different key is in the config than in the environment variables
-            if (isset($disk['key']) && $disk['key'] !== $accessKeyId) {
+            if (!isset($disk['key']) || $disk['key'] !== $accessKeyId) {
                 continue;
             }
 
@@ -198,7 +198,7 @@ class BrefServiceProvider extends ServiceProvider
                 continue;
             }
             // If a different key is in the config than in the environment variables
-            if (isset($store['key']) && $store['key'] !== $accessKeyId) {
+            if (!isset($store['key']) || $store['key'] !== $accessKeyId) {
                 continue;
             }
 
