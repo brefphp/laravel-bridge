@@ -24,7 +24,7 @@ functions:
     # This function runs the Laravel website/API
     web:
         handler: public/index.php
-        runtime: php-81-fpm
+        runtime: php-82-fpm
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
         events:
             - httpApi: '*'
@@ -32,7 +32,7 @@ functions:
     # This function lets us run artisan commands in Lambda
     artisan:
         handler: artisan
-        runtime: php-81-console
+        runtime: php-82-console
         timeout: 720 # in seconds
         # Uncomment to also run the scheduler every minute
         #events:
