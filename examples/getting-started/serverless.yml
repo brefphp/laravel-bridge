@@ -60,7 +60,7 @@ functions:
       BREF_LOOP_MAX: 250
       BREF_BINARY_RESPONSES: 1
     layers:
-      - ${bref:layer.php-81}
+      - ${bref:layer.php-82}
     events:
       - httpApi: '*'
 
@@ -68,7 +68,7 @@ functions:
     handler: artisan
     timeout: 720
     layers:
-      - ${bref:layer.php-81}
+      - ${bref:layer.php-82}
       - ${bref:layer.console}
     events:
       - schedule:
@@ -79,7 +79,7 @@ functions:
     handler: Bref\LaravelBridge\Queue\QueueHandler
     timeout: 59
     layers:
-      - ${bref:layer.php-81}
+      - ${bref:layer.php-82}
     events:
       - sqs:
           arn: !GetAtt Queue.Arn
