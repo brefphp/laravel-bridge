@@ -155,6 +155,10 @@ class BrefServiceProvider extends ServiceProvider
         if (Config::get('logging.default') === 'stack') {
             Config::set('logging.default', 'stderr');
         }
+
+        if (Config::get('logging.channels.emergency.path') === storage_path('logs/laravel.log')) {
+            Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
+        }
     }
 
     private function fixAwsCredentialsConfig(): void
