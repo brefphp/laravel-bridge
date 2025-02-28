@@ -71,6 +71,27 @@ class QueueHandler extends SqsHandler
      */
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        $resetScope = function () use ($app) {
+            if (method_exists($app['log'], 'flushSharedContext')) {
+                $app['log']->flushSharedContext();
+            }
+
+            if (method_exists($app['log'], 'withoutContext')) {
+                $app['log']->withoutContext();
+            }
+
+            if (method_exists($app['db'], 'getConnections')) {
+                foreach ($app['db']->getConnections() as $connection) {
+                    $connection->resetTotalQueryDuration();
+                    $connection->allowQueryDurationHandlersToRunAgain();
+                }
+            }
+
+            $app->forgetScopedInstances();
+
+            Facade::clearResolvedInstances();
+        };
+
         /** @var Worker $worker */
         $worker = $this->container->makeWith(Worker::class, [
             'isDownForMaintenance' => fn () => MaintenanceMode::active(),
