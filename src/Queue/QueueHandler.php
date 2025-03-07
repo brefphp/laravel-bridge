@@ -24,29 +24,13 @@ use Bref\LaravelBridge\MaintenanceMode;
 
 class QueueHandler extends SqsHandler
 {
-    /**
-     * The AWS SQS client.
-     *
-     * @var \Aws\Sqs\SqsClient
-     */
     protected SqsClient $sqs;
 
     /**
      * Number of seconds before Lambda invocation deadline to timeout the job.
-     *
-     * @var float
      */
     protected const JOB_TIMEOUT_SAFETY_MARGIN = 1.0;
 
-    /**
-     * Creates a new SQS queue handler instance.
-     *
-     * @param  \Illuminate\Container\Container  $container
-     * @param  \Illuminate\Contracts\Events\Dispatcher  $events
-     * @param  \Illuminate\Contracts\Debug\ExceptionHandler  $exceptions
-     * @param  string  $connection
-     * @return void
-     */
     public function __construct(
         protected Container $container,
         protected Dispatcher $events,
@@ -64,40 +48,14 @@ class QueueHandler extends SqsHandler
     }
 
     /**
-     * Handle Bref SQS event.
-     *
-     * @param  \Bref\Event\Sqs\SqsEvent  $event
-     * @param  \Bref\Context\Context  $context
-     * @return void
+     * Handle SQS event.
      */
     public function handleSqs(SqsEvent $event, Context $context): void
     {
-        $app = $this->container;
-        $resetScope = function () use ($app) {
-            if (method_exists($app['log'], 'flushSharedContext')) {
-                $app['log']->flushSharedContext();
-            }
-
-            if (method_exists($app['log'], 'withoutContext')) {
-                $app['log']->withoutContext();
-            }
-
-            if (method_exists($app['db'], 'getConnections')) {
-                foreach ($app['db']->getConnections() as $connection) {
-                    $connection->resetTotalQueryDuration();
-                    $connection->allowQueryDurationHandlersToRunAgain();
-                }
-            }
-
-            $app->forgetScopedInstances();
-
-            Facade::clearResolvedInstances();
-        };
-
         /** @var Worker $worker */
         $worker = $this->container->makeWith(Worker::class, [
             'isDownForMaintenance' => fn () => MaintenanceMode::active(),
-            'resetScope' => $resetScope,
+            'resetScope' => fn() => $this->resetLaravel(),
         ]);
 
         $worker->setCache(
@@ -180,5 +138,30 @@ class QueueHandler extends SqsHandler
     protected function calculateJobTimeout(int $remainingInvocationTimeInMs): int
     {
         return max((int) (($remainingInvocationTimeInMs - self::JOB_TIMEOUT_SAFETY_MARGIN) / 1000), 0);
+    }
+
+    /**
+     * Called on each new job to reset Laravel between jobs.
+     */
+    private function resetLaravel(): void
+    {
+        if (method_exists($this->container['log'], 'flushSharedContext')) {
+            $this->container['log']->flushSharedContext();
+        }
+
+        if (method_exists($this->container['log'], 'withoutContext')) {
+            $this->container['log']->withoutContext();
+        }
+
+        if (method_exists($this->container['db'], 'getConnections')) {
+            foreach ($this->container['db']->getConnections() as $connection) {
+                $connection->resetTotalQueryDuration();
+                $connection->allowQueryDurationHandlersToRunAgain();
+            }
+        }
+
+        $this->container->forgetScopedInstances();
+
+        Facade::clearResolvedInstances();
     }
 }
