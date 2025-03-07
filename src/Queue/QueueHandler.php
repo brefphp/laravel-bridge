@@ -18,6 +18,7 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Support\Facades\Facade;
 
 use Bref\LaravelBridge\MaintenanceMode;
 
@@ -71,9 +72,32 @@ class QueueHandler extends SqsHandler
      */
     public function handleSqs(SqsEvent $event, Context $context): void
     {
+        $app = $this->container;
+        $resetScope = function () use ($app) {
+            if (method_exists($app['log'], 'flushSharedContext')) {
+                $app['log']->flushSharedContext();
+            }
+
+            if (method_exists($app['log'], 'withoutContext')) {
+                $app['log']->withoutContext();
+            }
+
+            if (method_exists($app['db'], 'getConnections')) {
+                foreach ($app['db']->getConnections() as $connection) {
+                    $connection->resetTotalQueryDuration();
+                    $connection->allowQueryDurationHandlersToRunAgain();
+                }
+            }
+
+            $app->forgetScopedInstances();
+
+            Facade::clearResolvedInstances();
+        };
+
         /** @var Worker $worker */
         $worker = $this->container->makeWith(Worker::class, [
             'isDownForMaintenance' => fn () => MaintenanceMode::active(),
+            'resetScope' => $resetScope,
         ]);
 
         $worker->setCache(

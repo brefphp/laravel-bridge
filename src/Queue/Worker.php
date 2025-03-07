@@ -19,6 +19,10 @@ class Worker extends LaravelWorker
      */
     public function runSqsJob(Job $job, string $connectionName, WorkerOptions $options): void
     {
+        if (isset($this->resetScope)) {
+            ($this->resetScope)();
+        }
+
         pcntl_async_signals(true);
 
         pcntl_signal(SIGALRM, function () use ($job) {
