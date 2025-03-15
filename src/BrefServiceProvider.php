@@ -170,14 +170,6 @@ class BrefServiceProvider extends ServiceProvider
             return;
         }
 
-        // Path Failed jobs for DynamoDB Driver
-        $failedConfig = Config::get('queue.failed');
-        if (
-            isset($failedConfig['driver']) && $failedConfig['driver'] === 'dynamodb' && $failedConfig['key'] === $accessKeyId
-        ) {
-            Config::set('queue.failed.token', $sessionToken);
-        }
-
         // Patch SQS config
         foreach (Config::get('queue.connections') as $name => $connection) {
             if ($connection['driver'] !== 'sqs') {
@@ -189,6 +181,12 @@ class BrefServiceProvider extends ServiceProvider
             }
 
             Config::set("queue.connections.$name.token", $sessionToken);
+        }
+
+        // Patch SQS failed jobs config when using DynamoDB
+        $failedConfig = Config::get('queue.failed');
+        if (isset($failedConfig['driver']) && $failedConfig['driver'] === 'dynamodb' && $failedConfig['key'] === $accessKeyId) {
+            Config::set('queue.failed.token', $sessionToken);
         }
 
         // Patch S3 config
