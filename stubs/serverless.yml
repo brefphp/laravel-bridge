@@ -1,5 +1,9 @@
 service: laravel
 
+# Set your team ID if you are using Bref Cloud
+#bref:
+#    team: my-team-id
+
 provider:
     name: aws
     # The AWS region in which to deploy (us-east-1 is the default)
