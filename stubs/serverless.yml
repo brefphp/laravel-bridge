@@ -25,6 +25,9 @@ package:
         - '!storage/**'
         - '!tests/**'
         - '!database/*.sqlite'
+        # Exclude assets except for the manifest file
+        - '!public/build/**'
+        - 'public/build/manifest.json'
 
 functions:
 
