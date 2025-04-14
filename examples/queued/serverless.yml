@@ -1,0 +1,102 @@
+service: laravel
+
+params:
+  default:
+    domain: dev.example.com # TODO: Your staging/dev domain
+    amazon_ssl_arn: arn:aws:acm:us-east-1:xxxxxxxxx:certificate/xxxx-xxxx-xxxx # TODO: issue SSL within us-east-1 - Instructions: https://bref.sh/docs/websites.html#setting-up-a-domain-name
+    laravel_env: staging
+    laravel_debug: false # If you require your debug view change this, but be VERY careful not to leak any secrets!
+    tags: # Tag all of our resources - Useful for cost analysis using
+      project_name: ${self:service}
+      stage: ${opt:stage, self:provider.stage}
+  prod:
+    domain: prod.example.com # TODO: Your prod domain
+    amazon_ssl_arn: arn:aws:acm:us-east-1:xxxxxxxxx:certificate/xxxx-xxxx-xxxx # TODO: issue SSL within us-east-1 - Instructions: https://bref.sh/docs/websites.html#setting-up-a-domain-name
+    laravel_env: production
+
+provider:
+  name: aws
+  region: us-east-1 # The AWS region in which to deploy (us-east-1 is the default)
+  logRetentionInDays: 30
+  stackTags: ${param:tags}
+  tags: ${param:tags}
+  environment: # Add any environment variables for your Lambda environment here
+    APP_URL: https://${param:domain}
+    APP_ENV: ${param:laravel_env}
+    APP_DEBUG: ${param:laravel_debug}
+    MAINTENANCE_MODE: ${param:maintenance, null}
+    QUEUE_CONNECTION: sqs
+    SQS_QUEUE: ${construct:laravel-default-queue.queueUrl}
+
+functions:
+  # This function runs the Laravel website/API using PHP-FPM
+  # If you wish to use Laravel Octane, please comment this function, and replace with the commented one below:
+  web:
+    handler: public/index.php
+    runtime: php-82-fpm
+    timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+    events:
+      - httpApi: '*'
+
+  # This function runs the Laravel website/API using Laravel Octane
+  # If you wish to use Laravel without Octane, please comment this function, and replace with the one above:
+  #web:
+  #  handler: Bref\LaravelBridge\Http\OctaneHandler
+  #  environment:
+  #    BREF_LOOP_MAX: 250
+  #    OCTANE_PERSIST_DATABASE_SESSIONS: 1
+  #  runtime: php-82
+  #  timeout: 28 # in seconds
+  #  events:
+  #    - httpApi: '*'
+
+  # This function lets us run Artisan commands within the Lambda environment
+  #  To use: instead of `php artisan db:seed` you'd run from your local env to seed your Lambda environment:
+  #    serverless bref:cli --args="db:seed"
+  artisan:
+    handler: artisan
+    runtime: php-82-console
+    timeout: 720 # in seconds
+    events:
+      - schedule: # We also schedule this function to run the scheduler every minute to match Laravel's crons
+          rate: rate(1 minute)
+          input: '"schedule:run"'
+
+constructs:
+  laravel-default-queue:
+    type: queue
+    maxRetries: 1
+    worker:
+      handler: Bref\LaravelBridge\Queue\QueueHandler
+      timeout: 720
+      runtime: php-82
+
+  website:
+    type: server-side-website
+    domain: ${param:domain}
+    certificate: ${param:amazon_ssl_arn}
+    assets:
+      '/vendor/*': public/vendor
+      '/build/assets/*': public/build/assets
+      '/images/*': public/images
+      '/favicon.ico': public/favicon.ico
+      '/robots.txt': public/robots.txt
+
+custom:
+  scriptable:
+    hooks:
+      after:deploy:deploy:
+        - serverless bref:cli --stage=${sls:stage} --args="migrate --force" # Run any new migrations on deployment
+
+plugins:
+  - ./vendor/bref/bref
+  - serverless-lift
+  - serverless-scriptable-plugin
+
+package:
+  patterns: # Files and directories to exclude from deployment
+    - '!node_modules/**'
+    - '!public/storage'
+    - '!resources/assets/**'
+    - '!storage/**'
+    - '!tests/**'
