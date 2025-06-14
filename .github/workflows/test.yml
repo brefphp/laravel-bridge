@@ -120,7 +120,7 @@ jobs:
         run: "composer dump-autoload --no-interaction --optimize --strict-psr"
 
       - name: "Perform static analysis"
-        run: "phpstan analyze src/ stubs/"
+        run: "vendor/bin/phpstan analyze src/ stubs/"
 
   coding_standards:
     name: "Coding Standards"
