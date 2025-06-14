@@ -74,16 +74,18 @@ class HandlerResolver implements ContainerInterface
 
         $bootstrapFile = LaravelPathFinder::app();
 
-        $this->laravel = require $bootstrapFile;
+        $application = require $bootstrapFile;
 
-        if (! $this->laravel instanceof Application) {
+        if (! $application instanceof Application) {
             throw new RuntimeException(sprintf(
                 "Expected the `%s` file to return a %s object, instead it returned `%s`",
                 $bootstrapFile,
                 Application::class,
-                is_object($this->laravel) ? get_class($this->laravel) : gettype($this->laravel),
+                is_object($application) ? get_class($application) : gettype($application),
             ));
         }
+
+        $this->laravel = $application;
 
         $kernel = $this->laravel->make(Kernel::class);
         $kernel->bootstrap();
