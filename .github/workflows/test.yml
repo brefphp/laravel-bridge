@@ -120,7 +120,7 @@ jobs:
         run: "composer dump-autoload --no-interaction --optimize --strict-psr"
 
       - name: "Perform static analysis"
-        run: "composer exec -- phpstan analyze -c vendor/nunomaduro/larastan/extension.neon -l 5 src/ stubs/"
+        run: "phpstan analyze src/ stubs/"
 
   coding_standards:
     name: "Coding Standards"
