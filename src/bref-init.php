@@ -22,6 +22,7 @@ Bref::beforeStartup(static function () {
     $_SERVER['XDG_CONFIG_HOME'] = $_ENV['XDG_CONFIG_HOME'] = $xdgHome;
     putenv("XDG_CONFIG_HOME=$xdgHome");
 
+    // @phpstan-ignore-next-line
     $shouldCache = env('BREF_LARAVEL_CACHE_CONFIG', env('APP_ENV') !== 'local');
 
     if (! $shouldCache) {

@@ -79,9 +79,6 @@ class QueueHandler extends SqsHandler
 
     /**
      * Marshal the job with the given Bref SQS record.
-     *
-     * @param  \Bref\Event\Sqs\SqsRecord  $sqsRecord
-     * @return \Bref\LaravelBridge\Queue\SqsJob
      */
     protected function marshalJob(SqsRecord $sqsRecord): SqsJob
     {
@@ -104,9 +101,6 @@ class QueueHandler extends SqsHandler
 
     /**
      * Gather all of the queue worker options as a single object.
-     *
-     * @param  int  $timeout
-     * @return \Illuminate\Queue\WorkerOptions
      */
     protected function gatherWorkerOptions(int $timeout): WorkerOptions
     {
@@ -131,9 +125,6 @@ class QueueHandler extends SqsHandler
 
     /**
      * Calculate the timeout for a job
-     *
-     * @param  int  $remainingInvocationTimeInMs
-     * @return int
      */
     protected function calculateJobTimeout(int $remainingInvocationTimeInMs): int
     {
@@ -145,14 +136,17 @@ class QueueHandler extends SqsHandler
      */
     private function resetLaravel(): void
     {
+        // @phpstan-ignore-next-line
         if (method_exists($this->container['log'], 'flushSharedContext')) {
             $this->container['log']->flushSharedContext();
         }
 
+        // @phpstan-ignore-next-line
         if (method_exists($this->container['log'], 'withoutContext')) {
             $this->container['log']->withoutContext();
         }
 
+        // @phpstan-ignore-next-line
         if (method_exists($this->container['db'], 'getConnections')) {
             foreach ($this->container['db']->getConnections() as $connection) {
                 $connection->resetTotalQueryDuration();
