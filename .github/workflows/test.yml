@@ -48,7 +48,7 @@ jobs:
                 with:
                     dependency-versions: "${{ matrix.dependencies }}"
             -   name: PHPUnit
-                run: vendor/bin/phpunit
+                run: vendor/bin/phpunit tests
 
     static_analysis:
         name: Static Analysis
