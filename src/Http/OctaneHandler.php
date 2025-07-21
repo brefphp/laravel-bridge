@@ -50,6 +50,7 @@ class OctaneHandler extends HttpHandler
         if (
             ($response instanceof StreamedResponse) &&
             ($responseCallback = $response->getCallback()) &&
+            // @phpstan-ignore-next-line
             ((new ReflectionFunction($responseCallback))->getReturnType()?->getName() === Generator::class)
         ) {
             return new HttpResponse(
