@@ -44,7 +44,12 @@ class BrefServiceProvider extends ServiceProvider
 
         Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
 
-        Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
+        // If the views were not compiled yet, move them to a writable directory
+        $currentCompiledPath = Config::get('view.compiled');
+        if (! is_string($currentCompiledPath) || ! is_dir($currentCompiledPath)) {
+            Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
+        }
+
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
         $this->fixAwsCredentialsConfig();
