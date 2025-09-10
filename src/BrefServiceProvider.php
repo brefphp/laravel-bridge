@@ -2,6 +2,7 @@
 
 namespace Bref\LaravelBridge;
 
+use Bref\LaravelBridge\Console\Commands\BrefTinkerCommand;
 use Bref\LaravelBridge\Queue\QueueHandler;
 
 use Illuminate\Console\Events\ScheduledTaskStarting;
@@ -82,6 +83,12 @@ class BrefServiceProvider extends ServiceProvider
                 ScheduledTaskStarting::class,
                 fn(ScheduledTaskStarting $task) => $task->task->appendOutputTo('/proc/1/fd/1'),
             );
+        }
+
+        if (isset($_SERVER['AWS_LAMBDA_RUNTIME_API'])) {
+            $this->commands([
+                BrefTinkerCommand::class,
+            ]);
         }
     }
 
