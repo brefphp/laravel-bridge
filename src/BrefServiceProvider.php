@@ -5,6 +5,7 @@ namespace Bref\LaravelBridge;
 use Bref\LaravelBridge\Console\Commands\BrefTinkerCommand;
 use Bref\LaravelBridge\Queue\QueueHandler;
 
+use Bref\Monolog\CloudWatchFormatter;
 use Illuminate\Console\Events\ScheduledTaskStarting;
 
 use Illuminate\Log\LogManager;
@@ -166,6 +167,10 @@ class BrefServiceProvider extends ServiceProvider
 
         if (Config::get('logging.default') === 'stack') {
             Config::set('logging.default', 'stderr');
+        }
+
+        if (Config::get('logging.channels.stderr.formatter') === null) {
+            Config::set('logging.channels.stderr.formatter', CloudWatchFormatter::class);
         }
 
         if (Config::get('logging.channels.emergency.path') === storage_path('logs/laravel.log')) {

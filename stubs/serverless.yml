@@ -1,6 +1,6 @@
 service: laravel
 
-# Set your team ID if you are using Bref Cloud
+# Set your team ID if you are using Bref Cloud (https://bref.sh/cloud)
 #bref:
 #    team: my-team-id
 
@@ -11,23 +11,13 @@ provider:
     # Environment variables
     environment:
         APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
+        # Replace with a secret variable: https://bref.sh/docs/environment/variables#secrets
+        APP_KEY: 'base64:aqIOr0nFlPj0RtsUR4MTtIu4EBWohrOr9qcw0xVZE6c='
+        APP_DEBUG: false
         SESSION_DRIVER: cookie # Change to database if you have set up a database
-
-package:
-    # Files and directories to exclude from deployment
-    patterns:
-        - '!node_modules/**'
-        - '!public/storage'
-        - '!resources/assets/**'
-        - '!resources/css/**'
-        - '!resources/images/**'
-        - '!resources/js/**'
-        - '!storage/**'
-        - '!tests/**'
-        - '!database/*.sqlite'
-        # Exclude assets except for the manifest file
-        - '!public/build/**'
-        - 'public/build/manifest.json'
+        # Read more about logging: https://bref.sh/docs/environment/logs
+        LOG_CHANNEL: stderr
+        LOG_STDERR_FORMATTER: Bref\Monolog\CloudWatchFormatter
 
 functions:
 
@@ -49,6 +39,22 @@ functions:
         #    - schedule:
         #          rate: rate(1 minute)
         #          input: '"schedule:run"'
+
+package:
+    # Files and directories to exclude from deployment
+    patterns:
+        - '!node_modules/**'
+        - '!public/storage'
+        - '!resources/assets/**'
+        - '!resources/css/**'
+        - '!resources/images/**'
+        - '!resources/js/**'
+        - '!storage/**'
+        - '!tests/**'
+        - '!database/*.sqlite'
+        # Exclude assets except for the manifest file
+        - '!public/build/**'
+        - 'public/build/manifest.json'
 
 plugins:
     # We need to include the Bref plugin
