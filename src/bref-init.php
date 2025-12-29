@@ -11,6 +11,11 @@ Bref::beforeStartup(static function () {
         define('STDERR', fopen('php://stderr', 'wb'));
     }
 
+    // Print a warning if Laravel Vapor is detected because it is incompatible with Bref
+    if (class_exists('Laravel\Vapor\VaporServiceProvider')) {
+        fwrite(STDERR, "WARNING: `laravel/vapor-core` package detected. Laravel Vapor is incompatible with Bref. Please remove the 'laravel/vapor-core' package from your project to avoid unexpected issues.\n");
+    }
+
     $laravelRoot = LaravelPathFinder::root();
 
     StorageDirectories::create();
