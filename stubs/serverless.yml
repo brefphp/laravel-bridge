@@ -15,16 +15,31 @@ provider:
         APP_KEY: 'base64:aqIOr0nFlPj0RtsUR4MTtIu4EBWohrOr9qcw0xVZE6c='
         APP_DEBUG: false
         SESSION_DRIVER: cookie # Change to database if you have set up a database
-        # Read more about logging: https://bref.sh/docs/environment/logs
+        # Maintenance mode: https://bref.sh/docs/laravel/maintenance-mode
+        MAINTENANCE_MODE: ${param:maintenance, null}
+        # Logging configuration: https://bref.sh/docs/environment/logs
         LOG_CHANNEL: stderr
         LOG_STDERR_FORMATTER: Bref\Monolog\CloudWatchFormatter
+        # Database configuration: https://bref.sh/docs/environment/database
+        #DB_CONNECTION: mysql
+        #DB_HOST: your-database-endpoint.rds.amazonaws.com
+        #DB_PORT: 3306
+        #DB_DATABASE: laravel
+        #DB_USERNAME: root
+        #DB_PASSWORD: ${ssm:/my-app/dev/db-password}
+        # Queue configuration: https://bref.sh/docs/laravel/queues
+        #QUEUE_CONNECTION: sqs
+        #SQS_QUEUE: ${construct:jobs.queueUrl}
+        # Filesystem configuration: https://bref.sh/docs/laravel/filesystem
+        #FILESYSTEM_DISK: s3
+        #AWS_BUCKET: ${construct:storage.bucketName}
 
 functions:
 
     # This function runs the Laravel website/API
     web:
         handler: public/index.php
-        runtime: php-82-fpm
+        runtime: php-84-fpm
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
         events:
             - httpApi: '*'
@@ -32,7 +47,7 @@ functions:
     # This function lets us run artisan commands in Lambda
     artisan:
         handler: artisan
-        runtime: php-82-console
+        runtime: php-84-console
         timeout: 720 # in seconds
         # Uncomment to also run the scheduler every minute
         #events:
@@ -40,9 +55,42 @@ functions:
         #          rate: rate(1 minute)
         #          input: '"schedule:run"'
 
+constructs:
+    # SQS queue for Laravel jobs
+    # See https://bref.sh/docs/laravel/queues
+    #jobs:
+    #    type: queue
+    #    worker:
+    #        handler: Bref\LaravelBridge\Queue\QueueHandler
+    #        runtime: php-84
+    #        timeout: 60 # seconds
+
+    # S3 bucket for file storage
+    #storage:
+    #    type: storage
+
+    # CloudFront + S3 for website assets
+    # See https://bref.sh/docs/use-cases/websites
+    #website:
+    #    type: server-side-website
+    #    assets:
+    #        '/build/*': public/build
+    #        #'/vendor/*': public/vendor # Uncomment if the public/vendor exists
+    #        '/favicon.ico': public/favicon.ico
+    #        '/robots.txt': public/robots.txt
+
+# Environment-specific parameters
+# See https://github.com/oss-serverless/serverless/blob/main/docs/guides/parameters.md
+params:
+    #default:
+    #    foo: bar
+    #production:
+    #    foo: baz
+
 package:
     # Files and directories to exclude from deployment
     patterns:
+        - '!.env' # Don't deploy local config
         - '!node_modules/**'
         - '!public/storage'
         - '!resources/assets/**'
@@ -59,3 +107,6 @@ package:
 plugins:
     # We need to include the Bref plugin
     - ./vendor/bref/bref
+    # Uncomment the Serverless Lift plugin if you use constructs
+    # See https://github.com/getlift/lift
+    - serverless-lift
