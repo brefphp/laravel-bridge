@@ -68,6 +68,10 @@ constructs:
     # S3 bucket for file storage
     #storage:
     #    type: storage
+    #    lifecycleRules:
+    #        # Files in the `tmp/` folder will be cleaned after 1 day
+    #        -   prefix: tmp/
+    #            expirationInDays: 1
 
     # CloudFront + S3 for website assets
     # See https://bref.sh/docs/use-cases/websites
