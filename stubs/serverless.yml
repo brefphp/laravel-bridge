@@ -13,7 +13,9 @@ provider:
         APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
         # Replace with a secret variable: https://bref.sh/docs/environment/variables#secrets
         APP_KEY: 'base64:aqIOr0nFlPj0RtsUR4MTtIu4EBWohrOr9qcw0xVZE6c='
-        APP_DEBUG: false
+        APP_DEBUG: ${param:debug}
+        # Uncomment the line below if you uncomment `constructs.website`
+        #APP_URL: ${construct:website.url}
         SESSION_DRIVER: cookie # Change to database if you have set up a database
         # Maintenance mode: https://bref.sh/docs/laravel/maintenance-mode
         MAINTENANCE_MODE: ${param:maintenance, null}
@@ -86,10 +88,10 @@ constructs:
 # Environment-specific parameters
 # See https://github.com/oss-serverless/serverless/blob/main/docs/guides/parameters.md
 params:
-    #default:
-    #    foo: bar
-    #production:
-    #    foo: baz
+    default:
+        debug: 0
+    dev:
+        debug: 1 # Enable debug in `dev`
 
 package:
     # Files and directories to exclude from deployment
