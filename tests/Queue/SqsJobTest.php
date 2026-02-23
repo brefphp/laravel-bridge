@@ -8,7 +8,7 @@ use Illuminate\Container\Container;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
 
-class SqsJobTest extends TestCase
+final class SqsJobTest extends TestCase
 {
     protected $account;
     protected $queueName;
