@@ -8,8 +8,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you can configure list of public assets that should be servable
-    | from your application's domain instead of only being servable via
-    | the public S3 "asset" bucket or the AWS CloudFront CDN network.
+    | from your application's domain instead of AWS CloudFront.
+    | Read https://bref.sh/docs/use-cases/websites for a better solution.
     |
     */
 
@@ -40,4 +40,5 @@ return [
     */
 
     'log_jobs' => true,
+
 ];

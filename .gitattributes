@@ -1,7 +1,6 @@
 * text=auto eol=lf
 
 /.github export-ignore
-/examples export-ignore
 /tests export-ignore
 .codespellrc export-ignore
 .editorconfig export-ignore
