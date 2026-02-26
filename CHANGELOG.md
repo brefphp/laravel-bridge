@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.0.0]
+* Support [Bref v3](https://bref.sh/news/03-bref-3.0)
+* Improve the default `serverless.yml` config
+
+### Breaking Changes
+* Drop support for PHP 8.1, by @mnapoli
+* The JSON CloudWatch formatter is now enabled by default, by @mnapoli in https://github.com/brefphp/laravel-bridge/pull/193
+
 ## [v2.1.0] - 2023-03-20
 ### Added
 * Allow running Tinker commands on Lambda by @mnapoli in https://github.com/brefphp/laravel-bridge/pull/104
