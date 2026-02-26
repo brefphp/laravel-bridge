@@ -8,7 +8,7 @@ use Illuminate\Container\Container;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
 
-class SqsJobTest extends TestCase
+final class SqsJobTest extends TestCase
 {
     protected $account;
     protected $queueName;
@@ -52,7 +52,7 @@ class SqsJobTest extends TestCase
         m::close();
     }
 
-    public function testProperlyReleaseStandardSqs()
+    public function testProperlyReleaseStandardSqs(): void
     {
         $job = $this->createJob();
         $job->getSqs()
@@ -72,7 +72,7 @@ class SqsJobTest extends TestCase
         $this->assertTrue($job->isReleased());
     }
 
-    public function testProperlyReleaseFifoSqs()
+    public function testProperlyReleaseFifoSqs(): void
     {
         $job = $this->createFifoJob();
         $job->getSqs()
