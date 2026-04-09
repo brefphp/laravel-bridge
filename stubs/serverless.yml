@@ -74,6 +74,25 @@ constructs:
     #        # Files in the `tmp/` folder will be cleaned after 1 day
     #        -   prefix: tmp/
     #            expirationInDays: 1
+    #    extensions:
+    #        bucket:
+    #            Properties:
+    #                # S3 buckets have ACLs disabled by default since April 2023, but
+    #                # Laravel/Flysystem sends ACL headers on every S3 operation.
+    #                # This setting lets the bucket accept ACL headers.
+    #                OwnershipControls:
+    #                    Rules:
+    #                        -   ObjectOwnership: BucketOwnerPreferred
+    #                # CORS: required for uploading files from the browser via presigned URLs
+    #                # See https://bref.sh/docs/laravel/file-storage#large-files
+    #                #CorsConfiguration:
+    #                #    CorsRules:
+    #                #        -   AllowedOrigins:
+    #                #                - ${construct:website.url}
+    #                #            AllowedHeaders:
+    #                #                - '*'
+    #                #            AllowedMethods:
+    #                #                - PUT
 
     # CloudFront + S3 for website assets
     # See https://bref.sh/docs/use-cases/websites
