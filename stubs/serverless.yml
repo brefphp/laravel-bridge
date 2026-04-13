@@ -71,30 +71,17 @@ constructs:
     #storage:
     #    type: storage
     #    lifecycleRules:
-    #        # Files in the `tmp/` folder will be cleaned after 1 day
+    #        # Files in the `tmp/` folder will be cleaned after 1 day (e.g. failed uploads, temp files, etc.)
     #        -   prefix: tmp/
     #            expirationInDays: 1
-    #    extensions:
-    #        bucket:
-    #            Properties:
-    #                # S3 buckets have ACLs disabled by default since April 2023, but
-    #                # Laravel/Flysystem sends ACL headers on every S3 operation.
-    #                # This setting lets the bucket accept ACL headers.
-    #                OwnershipControls:
-    #                    Rules:
-    #                        -   ObjectOwnership: BucketOwnerPreferred
-    #                # CORS: required for uploading files from the browser via presigned URLs
-    #                # See https://bref.sh/docs/laravel/file-storage#large-files
-    #                #CorsConfiguration:
-    #                #    CorsRules:
-    #                #        -   AllowedOrigins:
-    #                #                - ${construct:website.url}
-    #                #            AllowedHeaders:
-    #                #                - '*'
-    #                #            AllowedMethods:
-    #                #                - PUT
+    #    # S3 buckets have ACLs disabled by default since 2023, but Laravel/Flysystem sends ACL
+    #    # headers on every S3 operation. This setting avoids errors (the bucket stays 100% private).
+    #    allowAcl: true
+    #    # CORS is required for uploading files from the browser via presigned URLs, put the URL of your website here
+    #    # See https://bref.sh/docs/laravel/file-storage#large-files and https://github.com/getlift/lift/blob/master/docs/storage.md#cors
+    #    cors: ${construct:website.url}
 
-    # CloudFront + S3 for website assets
+    # CloudFront + S3 for website assets (compatible with Inertia, Livewire, etc.)
     # See https://bref.sh/docs/use-cases/websites
     #website:
     #    type: server-side-website
