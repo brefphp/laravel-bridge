@@ -28,15 +28,17 @@ jobs:
                 run: "composer exec -- parallel-lint src/ config/ stubs/"
 
     tests:
-        name: Tests
+        name: "Tests (Laravel ${{ matrix.laravel }})"
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                php: [ '8.2', '8.3', '8.4' ]
-                dependencies: [ '' ]
                 include:
                     -   php: '8.2'
+                        laravel: 'lowest'
                         dependencies: '--prefer-lowest'
+                    -   php: '8.4'
+                        laravel: 'highest'
+                        dependencies: ''
         steps:
             -   uses: actions/checkout@v4
             -   name: Setup PHP
@@ -48,7 +50,7 @@ jobs:
                 with:
                     dependency-versions: "${{ matrix.dependencies }}"
             -   name: PHPUnit
-                run: vendor/bin/phpunit tests
+                run: vendor/bin/phpunit
 
     static_analysis:
         name: Static Analysis
@@ -84,4 +86,4 @@ jobs:
             -   name: Install dependencies
                 uses: ramsey/composer-install@v2
             -   name: PHPCS
-                run: "composer exec -- phpcs -s src/ stubs/"
+                run: "composer exec -- phpcs -s src/ stubs/ tests/"
