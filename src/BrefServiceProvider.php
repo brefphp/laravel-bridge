@@ -3,6 +3,9 @@
 namespace Bref\LaravelBridge;
 
 use Bref\LaravelBridge\Console\Commands\BrefTinkerCommand;
+use Bref\LaravelBridge\Console\Commands\QueueFailedJobsCountCommand;
+use Bref\LaravelBridge\Console\Commands\QueueFailedJobsListCommand;
+use Bref\LaravelBridge\Console\Commands\QueueFailedJobsShowCommand;
 use Bref\LaravelBridge\Queue\QueueHandler;
 
 use Bref\Monolog\CloudWatchFormatter;
@@ -89,6 +92,14 @@ class BrefServiceProvider extends ServiceProvider
                 ScheduledTaskStarting::class,
                 fn(ScheduledTaskStarting $task) => $task->task->appendOutputTo('/proc/1/fd/1'),
             );
+        }
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                QueueFailedJobsCountCommand::class,
+                QueueFailedJobsListCommand::class,
+                QueueFailedJobsShowCommand::class,
+            ]);
         }
 
         if (isset($_SERVER['AWS_LAMBDA_RUNTIME_API'])) {
