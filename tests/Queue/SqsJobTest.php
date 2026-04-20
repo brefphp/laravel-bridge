@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-use Bref\LaravelBridge\Queue\SqsJob;
+namespace Bref\LaravelBridge\Tests\Queue;
+
 use Aws\Sqs\SqsClient;
+use Bref\LaravelBridge\Queue\SqsJob;
 use Illuminate\Container\Container;
 use Mockery as m;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +34,7 @@ class SqsJobTest extends TestCase
         $this->releaseDelay = 0;
 
         // This is how the modified getQueue builds the queueUrl
-        $this->queueUrl = $this->baseUrl.'/'.$this->account.'/'.$this->queueName;
+        $this->queueUrl = $this->baseUrl . '/' . $this->account . '/' . $this->queueName;
 
         // Get a mock of the SqsClient
         $this->mockedSqsClient = m::mock(SqsClient::class);
@@ -77,7 +79,7 @@ class SqsJobTest extends TestCase
         $job = $this->createFifoJob();
         $job->getSqs()
             ->shouldReceive('deleteMessage')
-            ->with(['QueueUrl' => $this->queueUrl.'.fifo', 'ReceiptHandle' => $this->mockedReceiptHandle])
+            ->with(['QueueUrl' => $this->queueUrl . '.fifo', 'ReceiptHandle' => $this->mockedReceiptHandle])
             ->once();
         $job->getSqs()
             ->shouldReceive('sendMessage')
@@ -130,7 +132,7 @@ class SqsJobTest extends TestCase
             $this->mockedSqsClient,
             $jobData,
             'connection-name',
-            $this->queueUrl.'.fifo'
+            $this->queueUrl . '.fifo'
         );
     }
 }
