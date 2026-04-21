@@ -95,7 +95,7 @@ class QueueHandler extends SqsHandler
             $this->sqs,
             $message,
             $this->connection,
-            $sqsRecord->getQueueName(),
+            $sqsRecord->getQueueUrl(),
         );
     }
 
