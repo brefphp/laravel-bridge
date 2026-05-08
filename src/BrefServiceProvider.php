@@ -184,9 +184,7 @@ class BrefServiceProvider extends ServiceProvider
             Config::set('logging.channels.stderr.formatter', CloudWatchFormatter::class);
         }
 
-        if (Config::get('logging.channels.emergency.path') === storage_path('logs/laravel.log')) {
-            Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
-        }
+        Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
     }
 
     private function fixAwsCredentialsConfig(): void
