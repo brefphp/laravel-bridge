@@ -176,21 +176,15 @@ class BrefServiceProvider extends ServiceProvider
             Config::set('session.driver', 'cookie');
         }
 
-        $defaultLogChannel = Config::get('bref.logging.default', 'stderr');
-
-        if ($defaultLogChannel !== null) {
-            Config::set('logging.default', $defaultLogChannel);
+        if (Config::get('logging.default') === 'stack') {
+            Config::set('logging.default', 'stderr');
         }
-
-        $defaultEmergencyChannelPath = Config::get('bref.logging.emergency_path', 'php://stderr');
 
         if (Config::get('logging.channels.stderr.formatter') === null) {
             Config::set('logging.channels.stderr.formatter', CloudWatchFormatter::class);
         }
 
-        if ($defaultEmergencyChannelPath !== null) {
-            Config::set('logging.channels.emergency.path', $defaultEmergencyChannelPath);
-        }
+        Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
     }
 
     private function fixAwsCredentialsConfig(): void
