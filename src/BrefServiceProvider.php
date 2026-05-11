@@ -41,11 +41,9 @@ class BrefServiceProvider extends ServiceProvider
             return;
         }
 
-        $defaultEmergencyPath = $this->app->storagePath('logs/laravel.log');
-
         $this->app->useStoragePath(StorageDirectories::Path);
 
-        $this->fixDefaultConfiguration($defaultEmergencyPath);
+        $this->fixDefaultConfiguration();
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
 
@@ -172,7 +170,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function fixDefaultConfiguration(string $defaultEmergencyPath)
+    protected function fixDefaultConfiguration()
     {
         if (Config::get('session.driver') === 'file') {
             Config::set('session.driver', 'cookie');
