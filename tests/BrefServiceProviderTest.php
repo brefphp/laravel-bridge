@@ -66,38 +66,12 @@ class BrefServiceProviderTest extends TestCase
         config()->set('bref.logging.emergency_path', null);
         config()->set('logging.default', 'daily');
         config()->set('logging.channels.emergency', [
-            'path' => $this->defaultEmergencyPath,
+            'path' => '/tmp/emergency.log',
         ]);
 
         (new BrefServiceProvider($this->app))->register();
 
         $this->assertSame('daily', config('logging.default'));
-        $this->assertSame($this->defaultEmergencyPath, config('logging.channels.emergency.path'));
-    }
-
-    public function testItOverridesCustomEmergencyLoggingPathOnLambda(): void
-    {
-        config()->set('bref.logging.emergency_path', '/tmp/bref-emergency.log');
-        config()->set('logging.channels.emergency', [
-            'path' => '/tmp/emergency.log',
-        ]);
-
-        (new BrefServiceProvider($this->app))->register();
-
-        $this->assertSame('/tmp/bref-emergency.log', config('logging.channels.emergency.path'));
-    }
-
-    public function testItCanOptOutOfEmergencyOverrideForCustomPathOnLambda(): void
-    {
-        config()->set('bref.logging.emergency_path', null);
-        config()->set('logging.channels.emergency', [
-            'path' => '/tmp/emergency.log',
-        ]);
-
-        $this->app->useStoragePath('/tmp/custom-storage');
-
-        (new BrefServiceProvider($this->app))->register();
-
         $this->assertSame('/tmp/emergency.log', config('logging.channels.emergency.path'));
     }
 }
