@@ -32,6 +32,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | Lambda environments typically send logs to stderr rather than the local
+    | filesystem. These settings control Bref's Lambda logging behavior.
+    | Set either value to null to leave Laravel's logging configuration
+    | untouched.
+    |
+    */
+
+    'logging' => [
+        'default' => 'stderr',
+        'emergency_path' => 'php://stderr',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Jobs Logging
     |--------------------------------------------------------------------------
     |
