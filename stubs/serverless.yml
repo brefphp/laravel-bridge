@@ -10,7 +10,7 @@ provider:
     region: us-east-1
     # Environment variables
     environment:
-        APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
+        APP_ENV: ${param:appEnv}
         # Replace with a secret variable: https://bref.sh/docs/environment/variables#secrets
         APP_KEY: 'base64:aqIOr0nFlPj0RtsUR4MTtIu4EBWohrOr9qcw0xVZE6c='
         APP_DEBUG: ${param:debug}
@@ -95,7 +95,12 @@ constructs:
 # See https://github.com/oss-serverless/serverless/blob/main/docs/guides/parameters.md
 params:
     default:
+        # Laravel's APP_ENV. See https://bref.sh/docs/laravel/environments
+        appEnv: ${sls:stage}
         debug: 0
+    prod:
+        # Laravel expects "production" for `app()->isProduction()` to work correctly
+        appEnv: production
     dev:
         debug: 1 # Enable debug in `dev`
 
