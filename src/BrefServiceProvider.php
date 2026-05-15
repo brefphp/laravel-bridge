@@ -41,9 +41,11 @@ class BrefServiceProvider extends ServiceProvider
             return;
         }
 
+        $defaultEmergencyLogPath = $this->app->storagePath('logs/laravel.log');
+
         $this->app->useStoragePath(StorageDirectories::Path);
 
-        $this->fixDefaultConfiguration();
+        $this->fixDefaultConfiguration($defaultEmergencyLogPath);
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
 
@@ -170,7 +172,7 @@ class BrefServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function fixDefaultConfiguration()
+    protected function fixDefaultConfiguration(string $defaultEmergencyLogPath)
     {
         if (Config::get('session.driver') === 'file') {
             Config::set('session.driver', 'cookie');
@@ -184,7 +186,9 @@ class BrefServiceProvider extends ServiceProvider
             Config::set('logging.channels.stderr.formatter', CloudWatchFormatter::class);
         }
 
-        Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
+        if (Config::get('logging.channels.emergency.path') === $defaultEmergencyLogPath) {
+            Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
+        }
     }
 
     private function fixAwsCredentialsConfig(): void
