@@ -36,7 +36,7 @@ class StorageDirectories
         }
 
         foreach ($directories as $directory) {
-            if (! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+            if (! mkdir($directory, 0777, true) && ! is_dir($directory)) {
                 throw new RuntimeException("Directory {$directory} could not be created");
             }
         }
