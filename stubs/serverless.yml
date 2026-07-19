@@ -123,9 +123,10 @@ package:
         - '!storage/**'
         - '!tests/**'
         - '!database/*.sqlite'
-        # Exclude assets except for the manifest file
+        # Exclude assets except for the manifest files
         - '!public/build/**'
         - 'public/build/manifest.json'
+        - 'public/build/fonts-manifest.json'
 
 plugins:
     # We need to include the Bref plugin
