@@ -127,6 +127,7 @@ package:
         - '!public/build/**'
         - 'public/build/manifest.json'
         - 'public/build/fonts-manifest.json'
+        - 'public/build/assets/fonts-*.css'
 
 plugins:
     # We need to include the Bref plugin
