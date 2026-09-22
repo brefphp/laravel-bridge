@@ -124,7 +124,7 @@ class BrefServiceProvider extends ServiceProvider
      */
     private function registerUploadRoute(): void
     {
-        $path = Config::get('bref.uploads.route');
+        $path = Config::get('bref.uploads.route', '/signed-upload-url');
         if (! is_string($path)) {
             return;
         }

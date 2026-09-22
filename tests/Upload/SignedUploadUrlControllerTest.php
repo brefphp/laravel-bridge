@@ -43,7 +43,7 @@ class SignedUploadUrlControllerTest extends TestCase
 
     protected function partialUploadConfig($app): void
     {
-        $app['config']->set('bref.uploads', ['route' => self::URL]);
+        $app['config']->set('bref.uploads', ['max_size' => 1024]);
     }
 
     protected function throttleUploads($app): void
@@ -85,7 +85,7 @@ class SignedUploadUrlControllerTest extends TestCase
     }
 
     #[DefineEnvironment('partialUploadConfig')]
-    public function testMissingMiddlewareConfigurationKeepsAuthentication(): void
+    public function testPartialConfigurationKeepsTheDefaultRouteAndAuthentication(): void
     {
         Gate::define('uploadFiles', fn (?User $user) => true);
 
