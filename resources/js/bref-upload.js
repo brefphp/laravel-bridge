@@ -43,8 +43,20 @@
  * @property {string} [contentType] MIME type of the file. Defaults to `file.type`, or `application/octet-stream`.
  * @property {(ratio: number) => void} [progress] Called with the upload progress, from 0 to 1.
  * @property {Object<string, string>} [headers] Extra headers to send to the backend route (e.g. `Authorization`).
- * @property {string} [csrfToken] CSRF token. Defaults to the content of the `<meta name="csrf-token">` tag.
+ * @property {string} [csrfToken] CSRF token, sent as `X-CSRF-TOKEN`. By default, for same-origin requests, the
+ *     `XSRF-TOKEN` cookie set by Laravel is sent as `X-XSRF-TOKEN` (like axios and Inertia do), or else the content
+ *     of the `<meta name="csrf-token">` tag is sent as `X-CSRF-TOKEN`.
  * @property {AbortSignal} [signal] Signal to cancel the upload.
+ * @property {HttpClient} [httpClient] An axios-compatible HTTP client to use instead of `fetch` and `XMLHttpRequest`.
+ *     The client is then responsible for CSRF and authentication.
+ */
+
+/**
+ * An axios-compatible HTTP client (`axios` itself, or an axios instance).
+ *
+ * @typedef {Object} HttpClient
+ * @property {(url: string, data: any, config: Object) => Promise<{ data: any }>} post
+ * @property {(url: string, data: any, config: Object) => Promise<any>} put
  */
 
 /**
@@ -72,13 +84,16 @@ export class UploadError extends Error {
 export async function upload(file, options = {}) {
     const url = options.url ?? '/signed-upload-url';
     const contentType = options.contentType || file.type || 'application/octet-stream';
-    const csrfToken = options.csrfToken ?? readCsrfToken();
+
+    if (options.httpClient) {
+        return uploadWithHttpClient(file, url, contentType, options);
+    }
 
     const headers = {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
-        ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+        ...csrfHeaders(url, options.csrfToken),
         ...(options.headers ?? {}),
     };
 
@@ -111,6 +126,98 @@ export const store = upload;
 export default { upload, store, UploadError };
 
 /**
+ * Same as `upload()`, but delegating both requests to an axios-compatible client.
+ *
+ * @param {File|Blob} file
+ * @param {string} url
+ * @param {string} contentType
+ * @param {UploadOptions} options
+ * @returns {Promise<SignedUpload>}
+ */
+async function uploadWithHttpClient(file, url, contentType, options) {
+    const { httpClient, progress, signal } = options;
+
+    /** @type {SignedUpload} */
+    let signed;
+    try {
+        const response = await httpClient.post(url, { content_type: contentType }, {
+            headers: options.headers ?? {},
+            signal,
+        });
+        signed = response.data;
+    } catch (error) {
+        throw wrapHttpClientError(error, 'Could not get a signed upload URL');
+    }
+
+    try {
+        await httpClient.put(signed.url, file, {
+            headers: uploadHeaders(signed, contentType),
+            signal,
+            onUploadProgress: (event) => {
+                if (progress && event.total) {
+                    progress(event.loaded / event.total);
+                }
+            },
+        });
+    } catch (error) {
+        throw wrapHttpClientError(error, 'The upload to S3 failed');
+    }
+
+    if (progress) {
+        progress(1);
+    }
+
+    return signed;
+}
+
+/**
+ * Converts an error thrown by an axios-compatible client into an `UploadError` (cancellations are rethrown as is).
+ *
+ * @param {any} error
+ * @param {string} message
+ * @returns {Error}
+ */
+function wrapHttpClientError(error, message) {
+    if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError') {
+        return error;
+    }
+
+    const status = error?.response?.status ?? 0;
+    const uploadError = new UploadError(`${message} (HTTP ${status}).`, status);
+    uploadError.cause = error;
+
+    return uploadError;
+}
+
+/**
+ * The headers to send along with the file to S3: the presigned headers (except `Host`, which browsers forbid)
+ * and the content type.
+ *
+ * @param {SignedUpload} signed
+ * @param {string} contentType
+ * @returns {Object<string, string>}
+ */
+function uploadHeaders(signed, contentType) {
+    const headers = {};
+    let hasContentType = false;
+
+    for (const [name, value] of Object.entries(signed.headers ?? {})) {
+        if (name.toLowerCase() === 'host') {
+            continue;
+        }
+        if (name.toLowerCase() === 'content-type') {
+            hasContentType = true;
+        }
+        headers[name] = value;
+    }
+    if (!hasContentType) {
+        headers['Content-Type'] = contentType;
+    }
+
+    return headers;
+}
+
+/**
  * @param {File|Blob} file
  * @param {SignedUpload} signed
  * @param {string} contentType
@@ -128,19 +235,8 @@ function putToS3(file, signed, contentType, progress, signal) {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', signed.url);
 
-        let hasContentType = false;
-        for (const [name, value] of Object.entries(signed.headers ?? {})) {
-            // Browsers forbid setting the Host header
-            if (name.toLowerCase() === 'host') {
-                continue;
-            }
-            if (name.toLowerCase() === 'content-type') {
-                hasContentType = true;
-            }
+        for (const [name, value] of Object.entries(uploadHeaders(signed, contentType))) {
             xhr.setRequestHeader(name, value);
-        }
-        if (!hasContentType) {
-            xhr.setRequestHeader('Content-Type', contentType);
         }
 
         if (progress) {
@@ -183,14 +279,61 @@ function putToS3(file, signed, contentType, progress, signal) {
 }
 
 /**
- * @returns {string|undefined}
+ * The CSRF header(s) to send to the backend route.
+ *
+ * An explicit token is always sent. Otherwise, the token is only sent to same-origin URLs (like axios does), reading
+ * the `XSRF-TOKEN` cookie first because it is always up to date, and the `<meta name="csrf-token">` tag otherwise.
+ *
+ * @param {string} url
+ * @param {string|undefined} csrfToken
+ * @returns {Object<string, string>}
  */
-function readCsrfToken() {
-    if (typeof document === 'undefined') {
-        return undefined;
+function csrfHeaders(url, csrfToken) {
+    if (csrfToken) {
+        return { 'X-CSRF-TOKEN': csrfToken };
     }
 
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? undefined;
+    if (typeof document === 'undefined' || !isSameOrigin(url)) {
+        return {};
+    }
+
+    const xsrfToken = readCookie('XSRF-TOKEN');
+    if (xsrfToken) {
+        return { 'X-XSRF-TOKEN': xsrfToken };
+    }
+
+    const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (metaToken) {
+        return { 'X-CSRF-TOKEN': metaToken };
+    }
+
+    return {};
+}
+
+/**
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isSameOrigin(url) {
+    if (typeof window === 'undefined' || !window.location) {
+        return false;
+    }
+
+    try {
+        return new URL(url, window.location.href).origin === window.location.origin;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * @param {string} name
+ * @returns {string|undefined}
+ */
+function readCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]*)'));
+
+    return match ? decodeURIComponent(match[1]) : undefined;
 }
 
 /**
