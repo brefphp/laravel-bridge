@@ -87,3 +87,21 @@ jobs:
                 uses: ramsey/composer-install@v2
             -   name: PHPCS
                 run: "composer exec -- phpcs -s src/ stubs/ tests/"
+
+    javascript:
+        name: JavaScript helper
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v4
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: "8.4"
+                    coverage: none
+            -   uses: actions/setup-node@v4
+                with:
+                    node-version: "22"
+            -   name: Type-check bref-upload.js and regenerate bref-upload.d.ts
+                run: "composer types"
+            -   name: Check that bref-upload.d.ts is up to date
+                run: "git diff --exit-code resources/js/bref-upload.d.ts"

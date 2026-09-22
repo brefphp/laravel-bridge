@@ -88,6 +88,7 @@ class BrefServiceProvider extends ServiceProvider
 
             $this->publishes([
                 __DIR__ . '/../resources/js/bref-upload.js' => resource_path('js/bref-upload.js'),
+                __DIR__ . '/../resources/js/bref-upload.d.ts' => resource_path('js/bref-upload.d.ts'),
             ], 'bref-upload');
         }
 

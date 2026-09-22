@@ -51,6 +51,9 @@
     "config": {
         "sort-packages": true
     },
+    "scripts": {
+        "types": "npx -y -p typescript@5 tsc resources/js/bref-upload.js --allowJs --checkJs --strict --declaration --emitDeclarationOnly --target es2020 --module esnext --lib es2020,dom --outDir resources/js"
+    },
     "extra": {
         "laravel": {
             "providers": [
