@@ -13,6 +13,8 @@ use Symfony\Component\Mime\MimeTypes;
  * Returns a presigned S3 URL that the browser can use to upload a file directly to S3.
  *
  * The response is compatible with Laravel Vapor's `/vapor/signed-storage-url` endpoint.
+ *
+ * @internal Registered by the service provider on the route configured in `bref.uploads.route`.
  */
 class SignedUploadUrlController
 {

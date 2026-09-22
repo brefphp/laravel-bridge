@@ -49,8 +49,8 @@ return [
     | Lambda limits request bodies to a few megabytes. To upload larger files,
     | the browser asks this route for a presigned S3 URL and uploads the file
     | directly to S3 under a temporary prefix. The application then validates
-    | the key with the `Bref\LaravelBridge\Upload\UploadedToS3` rule and moves
-    | the file to its final location with `Bref\LaravelBridge\Upload\Uploads`.
+    | the key with the `Bref\LaravelBridge\Upload\UploadedToS3` rule and copies
+    | the file to its final location with `Storage::copy()`.
     |
     | The route is protected by the `uploadFiles` gate, which you must define
     | in your application (for example in `AppServiceProvider::boot()`). Uploads are
