@@ -128,6 +128,23 @@ class UploadedToS3Test extends TestCase
         $this->assertNull($this->validate('tmp/42/' . self::UUID . '.pdf', new UploadedToS3(extensions: null, maxSize: 6 * 1024 * 1024)));
     }
 
+    public function testMessagesCanBeTranslated(): void
+    {
+        $langPath = sys_get_temp_dir() . '/bref-upload-lang-' . uniqid();
+        mkdir($langPath);
+        file_put_contents($langPath . '/fr.json', json_encode([
+            'The :attribute is not a valid upload.' => 'Le fichier :attribute est invalide.',
+            'The :attribute exceeds the maximum size of :max.' => 'Le fichier :attribute dépasse :max.',
+        ]));
+        $this->app['translator']->addJsonPath($langPath);
+        $this->app->setLocale('fr');
+        $this->login(42);
+        Storage::put('tmp/42/' . self::UUID . '.pdf', str_repeat('a', 2048));
+
+        $this->assertSame('Le fichier file est invalide.', $this->validate('tmp/43/' . self::UUID . '.pdf', new UploadedToS3(extensions: null)));
+        $this->assertSame('Le fichier file dépasse 1 KB.', $this->validate('tmp/42/' . self::UUID . '.pdf', new UploadedToS3(extensions: null, maxSize: 1024)));
+    }
+
     public function testGuestsCanOnlyReferenceGuestUploads(): void
     {
         Storage::put('tmp/' . self::UUID . '.pdf', 'content');
