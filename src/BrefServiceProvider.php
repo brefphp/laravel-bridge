@@ -7,6 +7,7 @@ use Bref\LaravelBridge\Console\Commands\QueueFailedJobsCountCommand;
 use Bref\LaravelBridge\Console\Commands\QueueFailedJobsListCommand;
 use Bref\LaravelBridge\Console\Commands\QueueFailedJobsShowCommand;
 use Bref\LaravelBridge\Queue\QueueHandler;
+use Bref\LaravelBridge\Upload\SignedUploadUrlController;
 
 use Bref\Monolog\CloudWatchFormatter;
 use Illuminate\Console\Events\ScheduledTaskStarting;
@@ -14,6 +15,7 @@ use Illuminate\Console\Events\ScheduledTaskStarting;
 use Illuminate\Log\LogManager;
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Contracts\Http\Kernel;
@@ -83,7 +85,13 @@ class BrefServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../config/bref.php' => config_path('bref.php'),
             ], 'bref-config');
+
+            $this->publishes([
+                __DIR__ . '/../resources/js/bref-upload.js' => resource_path('js/bref-upload.js'),
+            ], 'bref-upload');
         }
+
+        $this->registerUploadRoute();
 
         if (config('bref.log_jobs', true)) {
             $this->enableDetailedJobLogging($dispatcher, $logManager, $queueFailer);
@@ -108,6 +116,31 @@ class BrefServiceProvider extends ServiceProvider
             $this->commands([
                 BrefTinkerCommand::class,
             ]);
+        }
+    }
+
+    /**
+     * Register the route that returns presigned S3 upload URLs.
+     */
+    private function registerUploadRoute(): void
+    {
+        $path = Config::get('bref.uploads.route');
+        if (! is_string($path)) {
+            return;
+        }
+
+        // When routes are cached, the route is already part of the cache
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $route = Route::post($path, SignedUploadUrlController::class)
+            ->middleware(Config::get('bref.uploads.middleware', ['web', 'auth']))
+            ->name('bref.uploads.signed-url');
+
+        $throttle = Config::get('bref.uploads.throttle');
+        if (is_string($throttle) && $throttle !== '') {
+            $route->middleware('throttle:' . $throttle);
         }
     }
 
