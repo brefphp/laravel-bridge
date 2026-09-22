@@ -38,26 +38,26 @@ class UploadedToS3 implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (! is_string($value)) {
-            $fail('The :attribute is not a valid upload.');
+            $fail('The :attribute is not a valid upload.')->translate();
             return;
         }
 
         // Authenticated users can only reference their own uploads, guests only guest uploads
         if (! preg_match($this->pattern(Auth::user()), $value)) {
-            $fail('The :attribute is not a valid upload.');
+            $fail('The :attribute is not a valid upload.')->translate();
             return;
         }
 
         $storage = Storage::disk($this->disk ?? Uploads::disk());
 
         if (! $storage->exists($value)) {
-            $fail('The :attribute was not found. Please upload it again.');
+            $fail('The :attribute was not found. Please upload it again.')->translate();
             return;
         }
 
         $maxSize = $this->maxSize ?? config('bref.uploads.max_size', 50 * 1024 * 1024);
         if ($maxSize !== null && $storage->size($value) > (int) $maxSize) {
-            $fail('The :attribute exceeds the maximum size of ' . self::formatBytes((int) $maxSize) . '.');
+            $fail('The :attribute exceeds the maximum size of :max.')->translate(['max' => self::formatBytes((int) $maxSize)]);
         }
     }
 
