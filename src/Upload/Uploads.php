@@ -5,6 +5,7 @@ namespace Bref\LaravelBridge\Upload;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Throwable;
 
 /**
  * Helpers to work with files uploaded to S3 via presigned URLs.
@@ -30,8 +31,13 @@ class Uploads
             throw new RuntimeException("Could not move the upload \"$key\" to \"$destination\".");
         }
 
-        // Best effort: the S3 lifecycle rule on the temporary prefix is the safety net
-        $storage->delete($key);
+        // Best effort: the S3 lifecycle rule on the temporary prefix is the safety net.
+        // Disks configured with `throw => true` throw instead of returning false.
+        try {
+            $storage->delete($key);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     /**

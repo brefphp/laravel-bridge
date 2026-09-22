@@ -54,6 +54,19 @@ class UploadsTest extends TestCase
         Uploads::move('tmp/42/missing.pdf', 'documents/report.pdf');
     }
 
+    public function testMoveReportsButDoesNotThrowWhenTheTemporaryFileCannotBeDeleted(): void
+    {
+        $disk = \Mockery::mock(\Illuminate\Filesystem\FilesystemAdapter::class);
+        $disk->shouldReceive('copy')->with('tmp/42/upload.pdf', 'documents/report.pdf')->once()->andReturn(true);
+        $disk->shouldReceive('delete')->with('tmp/42/upload.pdf')->once()->andThrow(new RuntimeException('Access denied'));
+        Storage::shouldReceive('disk')->with('s3')->once()->andReturn($disk);
+        $handler = \Mockery::mock(\Illuminate\Contracts\Debug\ExceptionHandler::class);
+        $handler->shouldReceive('report')->once();
+        $this->app->instance(\Illuminate\Contracts\Debug\ExceptionHandler::class, $handler);
+
+        Uploads::move('tmp/42/upload.pdf', 'documents/report.pdf');
+    }
+
     public function testDirectory(): void
     {
         $user = new User;
