@@ -27,6 +27,7 @@
     },
     "require-dev": {
         "larastan/larastan": "^2.11 || ^3",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "orchestra/testbench": "^8.0 || ^9.0 || ^10.0 || ^11.0",
         "php-parallel-lint/php-parallel-lint": "^1.3",
         "phpunit/phpunit": "^9.5 || ^10 || ^11 || ^12.5.12",
@@ -49,6 +50,9 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "scripts": {
+        "types": "npx -y -p typescript@5 tsc resources/js/bref-upload.js --allowJs --checkJs --strict --declaration --emitDeclarationOnly --target es2020 --module esnext --lib es2020,dom --outDir resources/js"
     },
     "extra": {
         "laravel": {

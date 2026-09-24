@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v3.1.0]
+### Added
+* Simple large file uploads via presigned S3 uploads: [documentation](https://bref.sh/docs/laravel/file-storage#large-files).
+  This registers `POST /signed-upload-url` by default, protected by authentication and the `uploadFiles` gate. Set `bref.uploads.route` to `null` to disable the route.
 
 ## [v3.0.0]
 * Support [Bref v3](https://bref.sh/news/03-bref-3.0)
