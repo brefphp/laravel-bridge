@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+* `bref.stack_name` config value: the name of the CloudFormation stack (`BREF_STACK_NAME` environment variable, set by Bref when deploying with `serverless.yml`). It lets applications forward queue names to Lift queues: [documentation](https://bref.sh/docs/laravel/queues#multiple-queues).
+
 ## [v3.1.0]
 ### Added
 * Simple large file uploads via presigned S3 uploads: [documentation](https://bref.sh/docs/laravel/file-storage#large-files).
