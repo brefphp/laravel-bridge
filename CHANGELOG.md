@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * `bref.stack_name` config value: the name of the CloudFormation stack (`BREF_STACK_NAME` environment variable, set by Bref when deploying with `serverless.yml`). It lets applications forward queue names to Lift queues: [documentation](https://bref.sh/docs/laravel/queues#multiple-queues).
 
+### Changed
+* Allow `bref/monolog-bridge` 2.0: on Lambda, log lines start with the request ID of the invocation, so that all the logs of a request can be found with it: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). To keep the previous log format, require `bref/monolog-bridge: ^1.0` in your application.
+
 ## [v3.1.0]
 ### Added
 * Simple large file uploads via presigned S3 uploads: [documentation](https://bref.sh/docs/laravel/file-storage#large-files).
