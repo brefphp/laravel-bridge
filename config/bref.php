@@ -43,6 +43,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Stack Name
+    |--------------------------------------------------------------------------
+    |
+    | Name of the CloudFormation stack of the application: Bref sets the
+    | `BREF_STACK_NAME` environment variable when deploying with serverless.yml.
+    | Null in local development. For example, Lift names SQS queues
+    | `<stack>-<construct>`: https://bref.sh/docs/laravel/queues#multiple-queues
+    |
+    */
+
+    'stack_name' => env('BREF_STACK_NAME'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Presigned Uploads
     |--------------------------------------------------------------------------
     |
