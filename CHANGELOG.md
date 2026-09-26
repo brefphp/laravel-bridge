@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Allow `bref/monolog-bridge` 2.0: on Lambda, log lines start with the request ID of the invocation, so that all the logs of a request can be found with it: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). To keep the previous log format, require `bref/monolog-bridge: ^1.0` in your application.
 
+### Fixed
+* When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
+
 ## [v3.1.0]
 ### Added
 * Simple large file uploads via presigned S3 uploads: [documentation](https://bref.sh/docs/laravel/file-storage#large-files).

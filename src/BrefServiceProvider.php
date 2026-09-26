@@ -20,12 +20,15 @@ use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Failed\FailedJobProviderInterface;
+
+use Throwable;
 
 class BrefServiceProvider extends ServiceProvider
 {
@@ -171,14 +174,20 @@ class BrefServiceProvider extends ServiceProvider
             )
         );
 
-        $dispatcher->listen(
-            fn (JobFailed $event) => $queueFailer->log(
-                $event->connectionName,
-                $event->job->getQueue(),
-                $event->job->getRawBody(),
-                $event->exception
-            )
-        );
+        $dispatcher->listen(function (JobFailed $event) use ($queueFailer) {
+            try {
+                $queueFailer->log(
+                    $event->connectionName,
+                    $event->job->getQueue(),
+                    $event->job->getRawBody(),
+                    $event->exception
+                );
+            } catch (Throwable $e) {
+                // Report the error instead of throwing it: a thrown exception would replace
+                // the job's own exception, which would then never be reported.
+                $this->app->make(ExceptionHandler::class)->report($e);
+            }
+        });
     }
 
     /**
