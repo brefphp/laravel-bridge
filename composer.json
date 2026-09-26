@@ -15,7 +15,7 @@
         "aws/aws-sdk-php": "^3.222",
         "bref/bref": "^3.0.2",
         "bref/laravel-health-check": "^1",
-        "bref/monolog-bridge": "^1.0",
+        "bref/monolog-bridge": "^1.0 || ^2.0",
         "illuminate/container": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "illuminate/contracts": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "illuminate/http": "^10.0 || ^11.0 || ^12.0 || ^13.0",
