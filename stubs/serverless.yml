@@ -133,5 +133,5 @@ plugins:
     # We need to include the Bref plugin
     - ./vendor/bref/bref
     # Uncomment the Serverless Lift plugin if you use constructs
-    # See https://github.com/getlift/lift
-    - serverless-lift
+    # Install it with `npm install --save-dev serverless-lift`, see https://github.com/getlift/lift
+    #- serverless-lift
