@@ -5,14 +5,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added
-* `bref.stack_name` config value: the name of the CloudFormation stack (`BREF_STACK_NAME` environment variable, set by Bref when deploying with `serverless.yml`). It lets applications forward queue names to Lift queues: [documentation](https://bref.sh/docs/laravel/queues#multiple-queues).
+### Fixed
+* When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
 
+## [v3.1.3]
 ### Changed
 * Allow `bref/monolog-bridge` 2.0: on Lambda, log lines start with the request ID of the invocation, so that all the logs of a request can be found with it: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). To keep the previous log format, require `bref/monolog-bridge: ^1.0` in your application.
 
-### Fixed
-* When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
+## [v3.1.2]
+### Changed
+* The `serverless-lift` plugin is commented out in the `serverless.yml` stub, like the constructs: the first deployment of a new application no longer fails when Lift is not installed. Install Lift and uncomment the plugin to use constructs.
+
+## [v3.1.1]
+### Added
+* `bref.stack_name` config value: the name of the CloudFormation stack (`BREF_STACK_NAME` environment variable, set by Bref when deploying with `serverless.yml`). It lets applications forward queue names to Lift queues: [documentation](https://bref.sh/docs/laravel/queues#multiple-queues).
 
 ## [v3.1.0]
 ### Added
