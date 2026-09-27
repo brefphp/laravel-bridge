@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Deprecated
+* The `bref.request_context` config option: it adds the `X-Request-ID` header to the shared log context, and API Gateway does not send that header (only the Octane and function runtimes of this package set it), so the option did nothing with PHP-FPM. On Lambda, Bref's log formatter now starts every log line with the request ID: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). The option will be removed in the next major version.
+
 ### Fixed
 * When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
 

@@ -23,8 +23,11 @@ return [
     | Shared Log Context
     |--------------------------------------------------------------------------
     |
-    | In order to make debugging a little easier, the Lambda `X-Request-ID`
-    | value can be added to the shared log context automatically.
+    | Deprecated, will be removed in the next major version: it adds the
+    | `X-Request-ID` header to the shared log context, and API Gateway does
+    | not send it. Bref's log formatter now starts every log line with the
+    | Lambda request ID, see
+    | https://bref.sh/docs/environment/logs#logs-of-a-single-request
     |
     */
 
