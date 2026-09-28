@@ -193,6 +193,7 @@ class BrefServiceProvider extends ServiceProvider
     /**
      * Add the request identifier to the shared log context.
      *
+     * @deprecated The `bref.request_context` option will be removed in the next major version.
      * @return void
      */
     protected function shareRequestContext()
