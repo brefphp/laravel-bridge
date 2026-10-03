@@ -12,8 +12,6 @@ use Bref\Event\Http\HttpHandler;
 use Bref\Event\Http\HttpResponse;
 use Bref\Event\Http\HttpRequestEvent;
 
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-
 class OctaneHandler extends HttpHandler
 {
     private OctaneClient $octaneClient;
@@ -45,12 +43,8 @@ class OctaneHandler extends HttpHandler
             $response->prepare($request); // https://github.com/laravel/framework/pull/43895
         }
 
-        $content = $response instanceof BinaryFileResponse
-            ? $response->getFile()->getContent()
-            : $response->getContent();
-
         return new HttpResponse(
-            $content,
+            ResponseBodyExtractor::extract($response),
             $response->headers->all(),
             $response->getStatusCode()
         );
