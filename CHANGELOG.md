@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * The `bref.request_context` config option: it adds the `X-Request-ID` header to the shared log context, and API Gateway does not send that header (only the Octane and function runtimes of this package set it), so the option did nothing with PHP-FPM. On Lambda, Bref's log formatter now starts every log line with the request ID: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). The option will be removed in the next major version.
 
 ### Fixed
+* Views compiled at build time (`php artisan optimize` or `php artisan view:cache` in Bref's Docker images) are now read from `storage/framework/views` in the deployed application. They were compiled again at every cold start, because the cached configuration sent compiled views to `/tmp`, and zip packages failed with `touch(): Utime failed: Read-only file system` when the compiled views path pointed to the package. Views compiled at runtime (`Blade::render()`, inline components, views that were not compiled at build time) are still compiled in `/tmp`.
 * When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
 
 ## [v3.1.3]
