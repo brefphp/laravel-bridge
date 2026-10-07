@@ -8,6 +8,7 @@ use Bref\LaravelBridge\Console\Commands\QueueFailedJobsListCommand;
 use Bref\LaravelBridge\Console\Commands\QueueFailedJobsShowCommand;
 use Bref\LaravelBridge\Queue\QueueHandler;
 use Bref\LaravelBridge\Upload\SignedUploadUrlController;
+use Bref\LaravelBridge\View\BladeCompiler;
 
 use Bref\Monolog\CloudWatchFormatter;
 use Illuminate\Console\Events\ScheduledTaskStarting;
@@ -28,6 +29,8 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Failed\FailedJobProviderInterface;
 
+use Illuminate\View\DynamicComponent;
+
 use Throwable;
 
 class BrefServiceProvider extends ServiceProvider
@@ -47,6 +50,7 @@ class BrefServiceProvider extends ServiceProvider
         }
 
         $defaultEmergencyLogPath = $this->app->storagePath('logs/laravel.log');
+        $defaultCompiledViewsPath = $this->app->storagePath('framework/views');
 
         $this->app->useStoragePath(StorageDirectories::Path);
 
@@ -56,11 +60,7 @@ class BrefServiceProvider extends ServiceProvider
 
         Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
 
-        // If the views were not compiled yet, move them to a writable directory
-        $currentCompiledPath = Config::get('view.compiled');
-        if (! is_string($currentCompiledPath) || ! is_dir($currentCompiledPath)) {
-            Config::set('view.compiled', StorageDirectories::Path . '/framework/views');
-        }
+        $this->configureCompiledViews($defaultCompiledViewsPath);
 
         Config::set('cache.stores.file.path', StorageDirectories::Path . '/framework/cache');
 
@@ -232,6 +232,39 @@ class BrefServiceProvider extends ServiceProvider
 
         if (Config::get('logging.channels.emergency.path') === $defaultEmergencyLogPath) {
             Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
+        }
+    }
+
+    /**
+     * Compile views in a writable directory, and read the views compiled at build time from the package.
+     */
+    private function configureCompiledViews(string $defaultCompiledPath): void
+    {
+        $compiledPath = Config::get('view.compiled');
+        if (! is_string($compiledPath) || ! is_dir($compiledPath) || ! is_writable($compiledPath)) {
+            // The default directory is writable when building the application in Bref's Docker image:
+            // `php artisan view:cache` then compiles the views there, to deploy them
+            $writableDefault = is_dir($defaultCompiledPath) && is_writable($defaultCompiledPath);
+            Config::set('view.compiled', $writableDefault ? $defaultCompiledPath : StorageDirectories::Path . '/framework/views');
+        }
+
+        // On Lambda the package is read-only: the views compiled at build time are read from it.
+        // Leave the compiler alone if something already resolved it: its directives would be lost.
+        if (is_dir($defaultCompiledPath) && ! is_writable($defaultCompiledPath) && ! $this->app->resolved('blade.compiler')) {
+            $this->app->singleton('blade.compiler', function ($app) use ($defaultCompiledPath) {
+                // Same as Laravel's ViewServiceProvider::registerBladeCompiler()
+                return tap(new BladeCompiler(
+                    $defaultCompiledPath,
+                    $app['files'],
+                    $app['config']['view.compiled'],
+                    $app['config']->get('view.relative_hash', false) ? $app->basePath() : '',
+                    $app['config']->get('view.cache', true),
+                    $app['config']->get('view.compiled_extension', 'php'),
+                    $app['config']->get('view.check_cache_timestamps', true),
+                ), function ($blade) {
+                    $blade->component('dynamic-component', DynamicComponent::class);
+                });
+            });
         }
     }
 
