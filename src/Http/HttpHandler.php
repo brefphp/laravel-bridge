@@ -10,6 +10,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Bref\Context\Context;
 use Bref\Event\Http\HttpResponse;
 use Bref\Event\Http\HttpRequestEvent;
+use Bref\Event\Http\Psr7Bridge;
 use Bref\Event\Http\HttpHandler as BrefHttpHandler;
 
 class HttpHandler extends BrefHttpHandler
@@ -34,6 +35,9 @@ class HttpHandler extends BrefHttpHandler
      */
     public function handleRequest(?HttpRequestEvent $event, ?Context $context): HttpResponse
     {
+        // Delete the files uploaded with the previous request: the Lambda instance is reused
+        Psr7Bridge::cleanupUploadedFiles();
+
         $request = Request::createFromBase(
             SymfonyRequestBridge::convertRequest($event, $context)
         );

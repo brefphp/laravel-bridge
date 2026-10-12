@@ -52,7 +52,7 @@ class OctaneHandlerTest extends TestCase
     #[PreserveGlobalState(false)]
     public function testFilesUploadedWithAPreviousRequestAreDeleted(): void
     {
-        // Named like Bref names uploads on Lambda: tempnam() adds 6 characters on Linux
+        // Named like Bref names uploads
         $previousUpload = sys_get_temp_dir() . '/bref_upload_' . bin2hex(random_bytes(3));
         touch($previousUpload);
 

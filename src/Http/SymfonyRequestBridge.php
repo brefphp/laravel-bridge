@@ -21,7 +21,16 @@ class SymfonyRequestBridge
     public static function convertRequest(HttpRequestEvent $event, Context $context): Request
     {
         $psr7Request = Psr7Bridge::convertRequest($event, $context);
-        $httpFoundationFactory = new HttpFoundationFactory();
+        $httpFoundationFactory = new class extends HttpFoundationFactory {
+            /**
+             * Symfony moves each uploaded file to a new temporary file: name it like Bref names uploads,
+             * so that `Psr7Bridge::cleanupUploadedFiles()` deletes it with the next request.
+             */
+            protected function getTemporaryPath(): string
+            {
+                return tempnam(sys_get_temp_dir(), 'bref_upload_');
+            }
+        };
         $symfonyRequest = $httpFoundationFactory->createRequest($psr7Request);
 
         $symfonyRequest->server->add([

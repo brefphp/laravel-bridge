@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * The `bref.request_context` config option: it adds the `X-Request-ID` header to the shared log context, and API Gateway does not send that header (only the Octane and function runtimes of this package set it), so the option did nothing with PHP-FPM. On Lambda, Bref's log formatter now starts every log line with the request ID: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). The option will be removed in the next major version.
 
 ### Fixed
-* The Octane handler never deleted the files uploaded with a request: they stayed in the reused Lambda instance's `/tmp` until it was full. Like Bref's PSR-15 handler, it now deletes the previous request's uploads when a request starts.
+* The Octane handler and `Bref\LaravelBridge\Http\HttpHandler` never deleted the files uploaded with a request: they stayed in the reused Lambda instance's `/tmp` until it was full. Like Bref's PSR-15 handler, they now delete the previous request's uploads when a request starts.
 * When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
 
 ## [v3.1.3]
