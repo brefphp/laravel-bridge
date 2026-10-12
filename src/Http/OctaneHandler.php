@@ -11,6 +11,7 @@ use Bref\Context\Context;
 use Bref\Event\Http\HttpHandler;
 use Bref\Event\Http\HttpResponse;
 use Bref\Event\Http\HttpRequestEvent;
+use Bref\Event\Http\Psr7Bridge;
 
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -31,6 +32,10 @@ class OctaneHandler extends HttpHandler
      */
     public function handleRequest(HttpRequestEvent $event, Context $context): HttpResponse
     {
+        // Delete the files uploaded with the previous request, like Bref's Psr15Handler does:
+        // the Lambda instance is reused, and its /tmp would otherwise keep every upload until it is full.
+        Psr7Bridge::cleanupUploadedFiles();
+
         $request = Request::createFromBase(
             SymfonyRequestBridge::convertRequest($event, $context)
         );
