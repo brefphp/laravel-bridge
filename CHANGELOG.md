@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * The Octane handler and `Bref\LaravelBridge\Http\HttpHandler` never deleted the files uploaded with a request: they stayed in the reused Lambda instance's `/tmp` until it was full. Like Bref's PSR-15 handler, they now delete the previous request's uploads when a request starts. Bref 3.0.13 is now required: before it, Bref's cleanup missed every upload on PHP 8.4 and up.
 * When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
+* Failed jobs are now stored by the Lambda queue handler, like `php artisan queue:work` does, instead of by a listener registered in every process. With `php artisan queue:work` (e.g. in local development), failed jobs were stored twice: with the default `database-uuids` driver, the second insert failed and its error replaced the job's own exception. This also means that failed jobs are stored on Lambda even when `bref.log_jobs` is disabled, and that failed `sync` jobs are no longer stored, like in a standard Laravel application.
 
 ## [v3.1.3]
 ### Changed

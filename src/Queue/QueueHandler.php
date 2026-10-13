@@ -3,6 +3,7 @@
 namespace Bref\LaravelBridge\Queue;
 
 use RuntimeException;
+use Throwable;
 
 use Aws\Sqs\SqsClient;
 
@@ -14,6 +15,8 @@ use Bref\Event\Sqs\SqsRecord;
 use Illuminate\Queue\SqsQueue;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\WorkerOptions;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Failed\FailedJobProviderInterface;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -45,6 +48,8 @@ class QueueHandler extends SqsHandler
         }
 
         $this->sqs = $queue->getSqs();
+
+        $events->listen(JobFailed::class, fn (JobFailed $event) => $this->logFailedJob($event));
     }
 
     /**
@@ -74,6 +79,25 @@ class QueueHandler extends SqsHandler
             if (! $job->hasFailed() && ! $job->isDeleted()) {
                 $job->delete();
             }
+        }
+    }
+
+    /**
+     * Store the failed job, like `php artisan queue:work` does.
+     */
+    protected function logFailedJob(JobFailed $event): void
+    {
+        try {
+            $this->container->make(FailedJobProviderInterface::class)->log(
+                $event->connectionName,
+                $event->job->getQueue(),
+                $event->job->getRawBody(),
+                $event->exception
+            );
+        } catch (Throwable $e) {
+            // Report the error instead of throwing it: a thrown exception would replace
+            // the job's own exception, which would then never be reported.
+            $this->exceptions->report($e);
         }
     }
 

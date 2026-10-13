@@ -11,8 +11,10 @@ use Bref\LaravelBridge\Queue\QueueHandler;
 use Bref\LaravelBridge\Tests\TestCase;
 use GuzzleHttp\Promise\Create;
 use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Queue\Failed\FailedJobProviderInterface;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Mockery as m;
 
 class QueueHandlerTest extends TestCase
 {
@@ -46,6 +48,29 @@ class QueueHandlerTest extends TestCase
         $app['config']->set('queue.failed.driver', 'database-uuids');
         $app['config']->set('queue.failed.database', 'sqlite');
         $app['config']->set('database.connections.sqlite.database', '/does-not-exist/database.sqlite');
+    }
+
+    protected function tearDown(): void
+    {
+        m::close();
+        parent::tearDown();
+    }
+
+    public function testTheFailedJobIsStored(): void
+    {
+        $failer = m::mock(FailedJobProviderInterface::class);
+        $failer->shouldReceive('log')->once()->andReturnUsing(function (...$arguments) use (&$stored) {
+            $stored = $arguments;
+        });
+        $this->app->instance(FailedJobProviderInterface::class, $failer);
+        $this->app->instance('queue.failer', $failer);
+
+        $this->runJob(new FailingJob);
+
+        [$connection, $queue, , $exception] = $stored;
+        $this->assertSame('sqs', $connection);
+        $this->assertSame('https://sqs.us-east-1.amazonaws.com/123456789012/default', $queue);
+        $this->assertSame('Job failed on purpose', $exception->getMessage());
     }
 
     public function testTheJobExceptionIsLoggedWhenTheFailedJobCannotBeStored(): void
