@@ -10,9 +10,9 @@ export function upload(file: File | Blob, options?: UploadOptions): Promise<Sign
  * @typedef {Object} SignedUpload
  * @property {string} uuid The unique ID of the upload.
  * @property {string} key The S3 key of the uploaded file, to send to the backend.
- * @property {string|null} bucket The S3 bucket, or null when the disk has no `bucket` configured.
- * @property {string} url The presigned URL the file was uploaded to.
- * @property {Object<string, string>} headers The headers used for the upload.
+ * @property {string} bucket The S3 bucket.
+ * @property {string} url The S3 URL the file was uploaded to.
+ * @property {Object<string, string>} fields The presigned form fields sent along with the file.
  * @property {string|null} extension The file extension derived from the content type, or null if unknown.
  */
 /**
@@ -33,7 +33,6 @@ export function upload(file: File | Blob, options?: UploadOptions): Promise<Sign
  *
  * @typedef {Object} HttpClient
  * @property {(url: string, data: any, config: Object<string, any>) => Promise<{ data: any }>} post
- * @property {(url: string, data: any, config: Object<string, any>) => Promise<any>} put
  */
 /**
  * Error thrown when the upload fails. `status` is the HTTP status code of the failed request (0 on network errors).
@@ -74,17 +73,17 @@ export type SignedUpload = {
      */
     key: string;
     /**
-     * The S3 bucket, or null when the disk has no `bucket` configured.
+     * The S3 bucket.
      */
-    bucket: string | null;
+    bucket: string;
     /**
-     * The presigned URL the file was uploaded to.
+     * The S3 URL the file was uploaded to.
      */
     url: string;
     /**
-     * The headers used for the upload.
+     * The presigned form fields sent along with the file.
      */
-    headers: {
+    fields: {
         [x: string]: string;
     };
     /**
@@ -136,7 +135,4 @@ export type HttpClient = {
     }) => Promise<{
         data: any;
     }>;
-    put: (url: string, data: any, config: {
-        [x: string]: any;
-    }) => Promise<any>;
 };

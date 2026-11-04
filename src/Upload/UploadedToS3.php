@@ -25,7 +25,8 @@ class UploadedToS3 implements ValidationRule
      * @param list<string>|null $extensions Allowed file extensions, e.g. `['pdf', 'png']`. The extension is derived
      *     from the client-declared content type; file contents are not inspected. Pass `null` to accept any
      *     extension. Serve untrusted uploads from a separate origin or as attachments.
-     * @param int|null $maxSize Maximum file size in bytes (null = `bref.uploads.max_size`).
+     * @param int|null $maxSize Maximum file size in bytes (null = `bref.uploads.max_size`). S3 rejects files larger
+     *     than `bref.uploads.max_size`: a larger value has no effect.
      * @param string|null $disk The disk to check (null = the disk configured in `bref.uploads.disk`).
      */
     public function __construct(
