@@ -17,6 +17,8 @@ provider:
         # Uncomment the line below if you uncomment `constructs.website`
         #APP_URL: ${construct:website.url}
         SESSION_DRIVER: cookie # Change to database if you have set up a database
+        # Not shared between requests: use database (or dynamodb) for a shared cache, see https://bref.sh/docs/laravel/caching
+        CACHE_STORE: array
         # Maintenance mode: https://bref.sh/docs/laravel/maintenance-mode
         MAINTENANCE_MODE: ${param:maintenance, null}
         # Logging configuration: https://bref.sh/docs/environment/logs
