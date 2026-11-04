@@ -46,6 +46,34 @@ class SignedUploadUrlControllerTest extends TestCase
         $app['config']->set('bref.uploads', ['max_size' => 1024]);
     }
 
+    protected function customMaxSize($app): void
+    {
+        $app['config']->set('bref.uploads.max_size', 1024);
+    }
+
+    protected function noMaxSize($app): void
+    {
+        $app['config']->set('bref.uploads.max_size', null);
+    }
+
+    protected function diskWithRoot($app): void
+    {
+        $app['config']->set('bref.uploads.disk', 's3-with-root');
+        $app['config']->set('filesystems.disks.s3-with-root', [
+            'driver' => 's3',
+            'key' => 'AKIAIOSFODNN7EXAMPLE',
+            'secret' => 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+            'region' => 'eu-west-1',
+            'bucket' => 'my-bucket',
+            'root' => 'app',
+        ]);
+    }
+
+    protected function localDisk($app): void
+    {
+        $app['config']->set('bref.uploads.disk', 'local');
+    }
+
     protected function throttleUploads($app): void
     {
         $app['config']->set('bref.uploads.throttle', '1,1');
@@ -122,22 +150,6 @@ class SignedUploadUrlControllerTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function testContentTypeHeadersAreMergedCaseInsensitively(): void
-    {
-        Gate::define('uploadFiles', fn (User $user) => true);
-        $disk = \Mockery::mock(\Illuminate\Filesystem\FilesystemAdapter::class);
-        $disk->shouldReceive('temporaryUploadUrl')->once()->andReturn([
-            'url' => 'https://example.com/upload',
-            'headers' => ['content-type' => ['application/pdf'], 'Host' => ['example.com']],
-        ]);
-        \Illuminate\Support\Facades\Storage::shouldReceive('disk')->with('s3')->once()->andReturn($disk);
-
-        $response = $this->actingAs($this->user())
-            ->postJson(self::URL, ['content_type' => 'application/pdf'])->assertCreated();
-
-        $this->assertSame(['Content-Type' => 'application/pdf'], $response->json('headers'));
-    }
-
     public function testItDeniesTheRequestWhenTheGateIsNotDefined(): void
     {
         $this->actingAs($this->user())
@@ -182,32 +194,83 @@ class SignedUploadUrlControllerTest extends TestCase
         $this->assertSame('tmp/' . $response->json('uuid') . '.jpg', $response->json('key'));
     }
 
-    public function testItReturnsAPresignedUploadUrl(): void
+    public function testItReturnsAPresignedPostForm(): void
     {
         Gate::define('uploadFiles', fn (User $user) => true);
 
         $response = $this->actingAs($this->user())
             ->postJson(self::URL, ['content_type' => 'application/pdf'])
             ->assertCreated()
-            ->assertJsonStructure(['uuid', 'key', 'bucket', 'url', 'headers', 'extension']);
+            ->assertJsonStructure(['uuid', 'key', 'bucket', 'url', 'fields', 'extension']);
 
         $uuid = $response->json('uuid');
         $this->assertMatchesRegularExpression('/^[0-9a-f-]{36}$/', $uuid);
         $this->assertSame("tmp/42/$uuid.pdf", $response->json('key'));
         $this->assertSame('my-bucket', $response->json('bucket'));
         $this->assertSame('pdf', $response->json('extension'));
+        $this->assertSame('https://my-bucket.s3.eu-west-1.amazonaws.com', $response->json('url'));
 
-        $url = $response->json('url');
-        $this->assertStringStartsWith('https://my-bucket.s3.eu-west-1.amazonaws.com/tmp/42/', $url);
-        $this->assertStringContainsString('X-Amz-Signature=', $url);
-        $this->assertStringContainsString('X-Amz-Expires=300', $url);
+        $fields = $response->json('fields');
+        $this->assertSame("tmp/42/$uuid.pdf", $fields['key']);
+        $this->assertSame('application/pdf', $fields['Content-Type']);
+        $this->assertArrayHasKey('X-Amz-Signature', $fields);
 
-        $headers = $response->json('headers');
-        $this->assertSame('application/pdf', $headers['Content-Type']);
-        foreach (array_keys($headers) as $name) {
-            $this->assertNotSame('host', strtolower($name), 'The Host header must not be returned');
-            $this->assertIsString($headers[$name], 'Headers must be flattened to strings');
+        $policy = json_decode(base64_decode($fields['Policy']), true);
+        $this->assertContains(['bucket' => 'my-bucket'], $policy['conditions']);
+        $this->assertContains(['key' => "tmp/42/$uuid.pdf"], $policy['conditions']);
+        $this->assertContains(['Content-Type' => 'application/pdf'], $policy['conditions']);
+        $this->assertContains(['content-length-range', 0, 50 * 1024 * 1024], $policy['conditions']);
+        $expiration = strtotime($policy['expiration']) - time();
+        $this->assertGreaterThan(290, $expiration);
+        $this->assertLessThanOrEqual(300, $expiration);
+    }
+
+    #[DefineEnvironment('customMaxSize')]
+    public function testS3EnforcesTheConfiguredMaximumSize(): void
+    {
+        Gate::define('uploadFiles', fn (User $user) => true);
+
+        $response = $this->actingAs($this->user())->postJson(self::URL)->assertCreated();
+
+        $policy = json_decode(base64_decode($response->json('fields.Policy')), true);
+        $this->assertContains(['content-length-range', 0, 1024], $policy['conditions']);
+    }
+
+    #[DefineEnvironment('noMaxSize')]
+    public function testTheSizeIsNotLimitedWithoutMaximumSize(): void
+    {
+        Gate::define('uploadFiles', fn (User $user) => true);
+
+        $response = $this->actingAs($this->user())->postJson(self::URL)->assertCreated();
+
+        $policy = json_decode(base64_decode($response->json('fields.Policy')), true);
+        foreach ($policy['conditions'] as $condition) {
+            $this->assertNotSame('content-length-range', $condition[0] ?? null);
         }
+    }
+
+    #[DefineEnvironment('diskWithRoot')]
+    public function testTheS3KeyIncludesTheRootOfTheDisk(): void
+    {
+        Gate::define('uploadFiles', fn (User $user) => true);
+
+        $response = $this->actingAs($this->user())->postJson(self::URL)->assertCreated();
+
+        // The application references the key relative to the disk
+        $this->assertSame('tmp/42/' . $response->json('uuid'), $response->json('key'));
+        $this->assertSame('app/tmp/42/' . $response->json('uuid'), $response->json('fields.key'));
+    }
+
+    #[DefineEnvironment('localDisk')]
+    public function testTheUploadDiskMustBeAnS3Disk(): void
+    {
+        Gate::define('uploadFiles', fn (User $user) => true);
+
+        $this->withoutExceptionHandling();
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The `local` disk used for uploads must be an S3 disk');
+
+        $this->actingAs($this->user())->postJson(self::URL);
     }
 
     public function testItDefaultsToOctetStreamWithoutExtension(): void
@@ -220,7 +283,7 @@ class SignedUploadUrlControllerTest extends TestCase
 
         $this->assertNull($response->json('extension'));
         $this->assertSame('tmp/42/' . $response->json('uuid'), $response->json('key'));
-        $this->assertSame('application/octet-stream', $response->json('headers.Content-Type'));
+        $this->assertSame('application/octet-stream', $response->json('fields.Content-Type'));
     }
 
     public function testItRejectsInvalidContentType(): void

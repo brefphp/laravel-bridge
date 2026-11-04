@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+* Presigned uploads use a presigned S3 POST form instead of a presigned PUT URL, so that S3 rejects files larger than `bref.uploads.max_size` (and files of another content type) instead of only the `UploadedToS3` rule after the upload. The `/signed-upload-url` route returns `fields` (the form fields to send with the file) instead of `headers`, and `url` is the bucket URL. To upgrade:
+  * Allow the `POST` method in the CORS configuration of the bucket (Lift's `cors: <origin>` shorthand only allows `GET`, `PUT` and `DELETE`).
+  * If you copied `bref-upload.js` with `vendor:publish`, publish it again: `php artisan vendor:publish --tag=bref-upload --force`.
+  * If `UploadedToS3` rules use a `maxSize` larger than `bref.uploads.max_size`, raise `bref.uploads.max_size`.
 
 ## [v3.1.4]
 ### Deprecated

@@ -2,17 +2,21 @@
 
 namespace Bref\LaravelBridge\Upload;
 
+use Aws\S3\PostObjectV4;
+use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use LogicException;
 use Symfony\Component\Mime\MimeTypes;
 
 /**
- * Returns a presigned S3 URL that the browser can use to upload a file directly to S3.
+ * Returns a presigned S3 POST form that the browser can use to upload a file directly to S3.
  *
- * The response is compatible with Laravel Vapor's `/vapor/signed-storage-url` endpoint.
+ * Unlike a presigned PUT URL, a presigned POST lets S3 enforce the maximum size (`bref.uploads.max_size`)
+ * and the content type: S3 rejects any other upload.
  *
  * @internal Registered by the service provider on the route configured in `bref.uploads.route`.
  */
@@ -36,30 +40,39 @@ class SignedUploadUrlController
         $key = Uploads::directory($user) . '/' . $uuid . ($extension !== null ? ".$extension" : '');
 
         $disk = Uploads::disk();
-        $expires = (int) config('bref.uploads.expires', 5);
-
-        /** @var array{url: string, headers: array<string, string|string[]>} $uploadUrl */
-        $uploadUrl = Storage::disk($disk)->temporaryUploadUrl($key, now()->addMinutes($expires), [
-            'ContentType' => $contentType,
-        ]);
-
-        $headers = ['Content-Type' => $contentType];
-        foreach ($uploadUrl['headers'] as $name => $values) {
-            // Browsers forbid setting the Host header
-            if (strtolower($name) === 'host') {
-                continue;
-            }
-            // PSR-7 headers are `string[]`
-            $name = strtolower($name) === 'content-type' ? 'Content-Type' : $name;
-            $headers[$name] = is_array($values) ? implode(', ', $values) : $values;
+        $storage = Storage::disk($disk);
+        if (! $storage instanceof AwsS3V3Adapter) {
+            throw new LogicException("The `$disk` disk used for uploads must be an S3 disk (configure it in `bref.uploads.disk`)");
         }
+        $bucket = (string) config("filesystems.disks.$disk.bucket");
+        $expires = (int) config('bref.uploads.expires', 5);
+        $maxSize = config('bref.uploads.max_size', 50 * 1024 * 1024);
+
+        // Includes the `root` of the disk, if any
+        $s3Key = $storage->path($key);
+
+        // S3 rejects uploads that don't match these conditions
+        $conditions = [
+            ['bucket' => $bucket],
+            ['key' => $s3Key],
+            ['Content-Type' => $contentType],
+        ];
+        if ($maxSize !== null) {
+            $conditions[] = ['content-length-range', 0, (int) $maxSize];
+        }
+
+        $post = new PostObjectV4($storage->getClient(), $bucket, [
+            'key' => $s3Key,
+            'Content-Type' => $contentType,
+        ], $conditions, "+$expires minutes");
 
         return new JsonResponse([
             'uuid' => $uuid,
             'key' => $key,
-            'bucket' => config("filesystems.disks.$disk.bucket"),
-            'url' => $uploadUrl['url'],
-            'headers' => $headers,
+            'bucket' => $bucket,
+            'url' => $post->getFormAttributes()['action'],
+            // Form fields to send, before the file, in a `multipart/form-data` POST request to `url`
+            'fields' => $post->getFormInputs(),
             'extension' => $extension,
         ], 201);
     }
