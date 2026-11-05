@@ -23,7 +23,7 @@
         "illuminate/support": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "laravel/octane": "^1.2 || ^2.0",
         "laravel/tinker": "^2.0 || ^3.0",
-        "riverline/multipart-parser": "^2.0"
+        "riverline/multipart-parser": "^2.3"
     },
     "require-dev": {
         "larastan/larastan": "^2.11 || ^3",
