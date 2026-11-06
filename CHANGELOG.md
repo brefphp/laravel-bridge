@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Security
-* A client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers, for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). `X-Forwarded-Prefix` is now ignored, and `X-Forwarded-Host` is only used on the AWS domain of the application. **Set `APP_URL` to your domain if you use a CDN like CloudFront**: `X-Forwarded-Host` must then match it or one of its subdomains, and without it a client that knows the AWS domain can still choose the domain. If your application is served on other domains, set `BREF_TRUST_FORWARDED_HOST=1`.
+* On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers, for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains. If a proxy in front of a custom domain sets them, set `BREF_TRUST_FORWARDED_HOST=1`. They are still used on AWS domains, because CDNs like CloudFront rely on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::forceRootUrl()`.
 ### Changed
 * `riverline/multipart-parser` 2.3 is now required. It limits a multipart body to 1000 parts: above that, the body is ignored.
 
