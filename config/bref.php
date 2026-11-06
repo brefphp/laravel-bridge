@@ -20,6 +20,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Forwarded Host
+    |--------------------------------------------------------------------------
+    |
+    | Clients can send the X-Forwarded-Host and X-Forwarded-Prefix headers
+    | through API Gateway. X-Forwarded-Host is only used on the AWS domain of
+    | the application, and must be the domain of APP_URL or one of its
+    | subdomains. X-Forwarded-Prefix is ignored. Enable this if your application
+    | is served on other domains by a proxy that always sets these headers,
+    | and the proxy can't be bypassed.
+    |
+    */
+
+    'trust_forwarded_host' => env('BREF_TRUST_FORWARDED_HOST', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Shared Log Context
     |--------------------------------------------------------------------------
     |
