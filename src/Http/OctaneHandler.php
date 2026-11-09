@@ -49,14 +49,14 @@ class OctaneHandler extends HttpHandler
             $fiber = new Fiber(fn () => $this->octaneClient->handle($request));
             $streamed = $fiber->start();
             if ($streamed instanceof StreamedResponse) {
-                $body = (function () use ($fiber) {
-                    while (! $fiber->isTerminated()) {
-                        $chunk = $fiber->resume();
-                        if (is_string($chunk)) {
-                            yield $chunk;
-                        }
+                // Bref calls it with the function that sends a chunk: Octane resumes, runs the callback and ends the request
+                $body = function (callable $write) use ($fiber): void {
+                    $fiber->resume($write);
+                    $error = $this->octaneClient->takeStreamError();
+                    if ($error) {
+                        throw $error;
                     }
-                })();
+                };
 
                 return new HttpResponse($body, $streamed->headers->all(), $streamed->getStatusCode());
             }

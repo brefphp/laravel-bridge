@@ -30,6 +30,11 @@ class OctaneClient implements Client
      */
     private OctaneResponse|null $response;
 
+    /**
+     * The exception thrown while sending the last streamed response, if any.
+     */
+    private Throwable|null $streamError = null;
+
     public function __construct(string $basePath, bool $persistDatabaseSession)
     {
         $this->worker = tap(
@@ -83,24 +88,36 @@ class OctaneClient implements Client
     {
         // Streamed responses are sent while their callback runs, inside the request (see OctaneHandler)
         if ($response->response instanceof StreamedResponse && Fiber::getCurrent() !== null) {
-            // Hand the status and headers over, then each chunk of output
-            Fiber::suspend($response->response);
-            ob_start(function (string $buffer): string {
-                if ($buffer === '' || Fiber::getCurrent() === null) {
-                    return $buffer;
+            // Hand the status and headers over: Bref resumes with the function that sends a chunk of the body
+            $write = Fiber::suspend($response->response);
+            // Each output is sent from the output handler itself: no Fiber switch in there, PHP would
+            // consider any output from outside as output from the handler
+            ob_start(function (string $buffer) use ($write): string {
+                if ($buffer !== '') {
+                    $write($buffer);
                 }
-                Fiber::suspend($buffer);
 
                 return '';
             }, 1);
             try {
                 $response->response->sendContent();
+            } catch (Throwable $e) {
+                // Octane only logs it: OctaneHandler reports it to Bref too
+                $this->streamError = $e;
+                throw $e;
             } finally {
                 ob_end_clean();
             }
         }
 
         $this->response = $response;
+    }
+
+    public function takeStreamError(): Throwable|null
+    {
+        [$error, $this->streamError] = [$this->streamError, null];
+
+        return $error;
     }
 
     /**
