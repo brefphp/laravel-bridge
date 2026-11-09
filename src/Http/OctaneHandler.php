@@ -13,7 +13,9 @@ use Bref\Event\Http\HttpResponse;
 use Bref\Event\Http\HttpRequestEvent;
 use Bref\Event\Http\Psr7Bridge;
 
+use Fiber;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OctaneHandler extends HttpHandler
 {
@@ -43,7 +45,22 @@ class OctaneHandler extends HttpHandler
         if (MaintenanceMode::active()) {
             $response = MaintenanceMode::response($request)->prepare($request);
         } else {
-            $response = $this->octaneClient->handle($request);
+            // In a Fiber so that a streamed response can be sent while Laravel produces it (see OctaneClient::respond())
+            $fiber = new Fiber(fn () => $this->octaneClient->handle($request));
+            $streamed = $fiber->start();
+            if ($streamed instanceof StreamedResponse) {
+                $body = (function () use ($fiber) {
+                    while (! $fiber->isTerminated()) {
+                        $chunk = $fiber->resume();
+                        if (is_string($chunk)) {
+                            yield $chunk;
+                        }
+                    }
+                })();
+
+                return new HttpResponse($body, $streamed->headers->all(), $streamed->getStatusCode());
+            }
+            $response = $fiber->getReturn();
         }
 
         if (! $response->headers->has('Content-Type')) {

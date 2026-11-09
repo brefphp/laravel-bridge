@@ -2,6 +2,7 @@
 
 namespace Bref\LaravelBridge\Octane;
 
+use Fiber;
 use Throwable;
 
 use Laravel\Octane\Worker;
@@ -15,6 +16,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OctaneClient implements Client
 {
@@ -79,6 +81,25 @@ class OctaneClient implements Client
      */
     public function respond(RequestContext $context, OctaneResponse $response): void
     {
+        // Streamed responses are sent while their callback runs, inside the request (see OctaneHandler)
+        if ($response->response instanceof StreamedResponse && Fiber::getCurrent() !== null) {
+            // Hand the status and headers over, then each chunk of output
+            Fiber::suspend($response->response);
+            ob_start(function (string $buffer): string {
+                if ($buffer === '' || Fiber::getCurrent() === null) {
+                    return $buffer;
+                }
+                Fiber::suspend($buffer);
+
+                return '';
+            }, 1);
+            try {
+                $response->response->sendContent();
+            } finally {
+                ob_end_clean();
+            }
+        }
+
         $this->response = $response;
     }
 
