@@ -22,7 +22,8 @@ class IgnoreForwardedHostOnCustomDomains
      */
     public function handle(Request $request, Closure $next)
     {
-        // A CDN sets these headers because it calls the application on its AWS domain.
+        // The CloudFront distributions created by Lift and Bref Cloud set X-Forwarded-Host,
+        // because they call the application on its AWS domain.
         // On any other domain, the Host header is already the right one.
         $isAwsDomain = preg_match('/\.(amazonaws\.com|on\.aws)$/i', (string) $request->headers->get('Host')) === 1;
 
