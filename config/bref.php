@@ -20,20 +20,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Forwarded Host
-    |--------------------------------------------------------------------------
-    |
-    | Clients can send the X-Forwarded-Host and X-Forwarded-Prefix headers
-    | through API Gateway, so they are ignored on custom domains. Enable this
-    | if a proxy in front of a custom domain always sets these headers, and
-    | can't be bypassed.
-    |
-    */
-
-    'trust_forwarded_host' => env('BREF_TRUST_FORWARDED_HOST', false),
-
-    /*
-    |--------------------------------------------------------------------------
     | Shared Log Context
     |--------------------------------------------------------------------------
     |

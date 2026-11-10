@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bref\LaravelBridge\Tests\Http;
 
+use Bref\LaravelBridge\BrefServiceProvider;
 use Bref\LaravelBridge\Tests\TestCase;
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 class ForwardedHostTest extends TestCase
 {
@@ -18,6 +19,12 @@ class ForwardedHostTest extends TestCase
 
         parent::setUp();
 
+        // Laravel 10 applications add it in their own HTTP kernel
+        $kernel = $this->app->make(Kernel::class);
+        if (! $kernel->hasMiddleware(TrustProxies::class)) {
+            $kernel->prependMiddleware(TrustProxies::class);
+        }
+
         Route::get('/url', fn () => url('/path'));
     }
 
@@ -25,42 +32,54 @@ class ForwardedHostTest extends TestCase
     {
         unset($_SERVER['LAMBDA_TASK_ROOT']);
 
+        if (method_exists(TrustProxies::class, 'flushState')) {
+            TrustProxies::flushState();
+        }
+
         parent::tearDown();
     }
 
     public function testTheHeadersAreIgnoredOnACustomDomain(): void
     {
-        $this->assertSame('https://app.example.com/path', $this->url('app.example.com'));
+        foreach (['app.example.com', 'amazonaws.com.example.com', 'fakeamazonaws.com', 'example.on.aws.example.com'] as $host) {
+            $this->assertSame("https://$host/path", $this->url($host));
+        }
     }
 
-    #[DataProvider('provideDomainsThatLookLikeAws')]
-    public function testTheHeadersAreIgnoredOnADomainThatOnlyLooksLikeAws(string $host): void
+    public function testTheHeadersAreUsedOnAnAwsDomain(): void
     {
-        $this->assertSame("https://$host/path", $this->url($host));
+        foreach (['abc123.execute-api.eu-west-1.amazonaws.com', 'abc123.lambda-url.eu-west-1.on.aws'] as $host) {
+            $this->assertSame('https://cdn.example.org/prefix/path', $this->url($host));
+        }
     }
 
-    public static function provideDomainsThatLookLikeAws(): array
+    public function testTheTrustedProxiesOfTheApplicationAreKept(): void
     {
-        return [['amazonaws.com.example.com'], ['fakeamazonaws.com'], ['example.on.aws.example.com']];
+        config()->set('trustedproxy.proxies', '*');
+        (new BrefServiceProvider($this->app))->register();
+
+        $this->assertSame('*', config('trustedproxy.proxies'));
+        $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
     }
 
-    #[DataProvider('provideAwsDomains')]
-    public function testTheHeadersAreUsedOnAnAwsDomain(string $host): void
+    public function testTheHeadersAreUsedWhenTheApplicationTrustsProxies(): void
     {
-        // Not related to APP_URL: an application can be served on several domains
-        config()->set('app.url', 'https://example.com');
+        if (! method_exists(TrustProxies::class, 'at')) {
+            $this->markTestSkipped('TrustProxies::at() was added in Laravel 11');
+        }
 
-        $this->assertSame('https://cdn.example.org/prefix/path', $this->url($host));
+        TrustProxies::at('*');
+
+        $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
     }
 
-    public static function provideAwsDomains(): array
+    public function testTheHeadersAreUsedWhenTheApplicationChoosesTheTrustedHeaders(): void
     {
-        return [['abc123.execute-api.eu-west-1.amazonaws.com'], ['abc123.lambda-url.eu-west-1.on.aws']];
-    }
+        if (! method_exists(TrustProxies::class, 'withHeaders')) {
+            $this->markTestSkipped('TrustProxies::withHeaders() was added in Laravel 11');
+        }
 
-    public function testTheHeadersCanBeTrustedOnACustomDomain(): void
-    {
-        config()->set('bref.trust_forwarded_host', true);
+        TrustProxies::withHeaders(Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PREFIX);
 
         $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
     }

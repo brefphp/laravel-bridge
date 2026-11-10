@@ -33,6 +33,12 @@ use Throwable;
 class BrefServiceProvider extends ServiceProvider
 {
     /**
+     * Trusted when the application doesn't configure its trusted proxies:
+     * the IP addresses of API Gateway and CloudFront are not known in advance.
+     */
+    public const TRUSTED_PROXIES = ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3'];
+
+    /**
      * Set up Bref integration.
      *
      * @return void
@@ -54,7 +60,9 @@ class BrefServiceProvider extends ServiceProvider
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
 
-        Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
+        if (empty(Config::get('trustedproxy.proxies'))) {
+            Config::set('trustedproxy.proxies', self::TRUSTED_PROXIES);
+        }
 
         // If the views were not compiled yet, move them to a writable directory
         $currentCompiledPath = Config::get('view.compiled');
