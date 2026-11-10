@@ -89,7 +89,7 @@ class BrefServiceProvider extends ServiceProvider
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
         if (isset($_SERVER['LAMBDA_TASK_ROOT'])) {
-            $this->app[Kernel::class]->prependMiddleware(Http\Middleware\IgnoreForwardedHostOnCustomDomains::class);
+            $this->app[Kernel::class]->pushMiddleware(Http\Middleware\IgnoreForwardedHostOnCustomDomains::class);
         }
 
         if ($this->app->runningInConsole()) {

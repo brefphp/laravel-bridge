@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Bref\LaravelBridge\Tests\Http;
 
+use Bref\Context\Context;
+use Bref\Event\Http\HttpRequestEvent;
 use Bref\LaravelBridge\BrefServiceProvider;
+use Bref\LaravelBridge\Http\HttpHandler;
 use Bref\LaravelBridge\Tests\TestCase;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -46,6 +49,28 @@ class ForwardedHostTest extends TestCase
         }
     }
 
+    public function testTheHeadersAreIgnoredOnACustomDomainInTheFunctionRuntime(): void
+    {
+        $handler = new HttpHandler($this->app->make(Kernel::class));
+
+        $response = $handler->handleRequest(new HttpRequestEvent([
+            'version' => '2.0',
+            'rawPath' => '/url',
+            'headers' => [
+                'host' => 'app.example.com',
+                'x-forwarded-proto' => 'https',
+                'x-forwarded-port' => '443',
+                'x-forwarded-host' => 'attacker.example',
+                'x-forwarded-prefix' => '/attacker',
+            ],
+            'requestContext' => [
+                'http' => ['method' => 'GET', 'path' => '/url', 'protocol' => 'HTTP/1.1', 'sourceIp' => '203.0.113.10'],
+            ],
+        ]), Context::fake());
+
+        $this->assertSame('https://app.example.com/path', $response->toApiGatewayFormatV2()['body']);
+    }
+
     public function testTheHeadersAreUsedOnAnAwsDomain(): void
     {
         foreach (['abc123.execute-api.eu-west-1.amazonaws.com', 'abc123.lambda-url.eu-west-1.on.aws'] as $host) {
@@ -53,12 +78,21 @@ class ForwardedHostTest extends TestCase
         }
     }
 
-    public function testTheTrustedProxiesOfTheApplicationAreKept(): void
+    public function testTheTrustedProxiesOfTheConfigurationAreKept(): void
     {
         config()->set('trustedproxy.proxies', '*');
         (new BrefServiceProvider($this->app))->register();
 
         $this->assertSame('*', config('trustedproxy.proxies'));
+        $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
+    }
+
+    public function testTheHeadersAreUsedWhenTheMiddlewareTrustsProxies(): void
+    {
+        $this->app->bind(TrustProxies::class, fn () => new class extends TrustProxies {
+            protected $proxies = '*';
+        });
+
         $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
     }
 
@@ -73,7 +107,7 @@ class ForwardedHostTest extends TestCase
         $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
     }
 
-    public function testTheHeadersAreUsedWhenTheApplicationChoosesTheTrustedHeaders(): void
+    public function testChoosingTheTrustedHeadersAloneDoesNotTrustTheHost(): void
     {
         if (! method_exists(TrustProxies::class, 'withHeaders')) {
             $this->markTestSkipped('TrustProxies::withHeaders() was added in Laravel 11');
@@ -81,7 +115,7 @@ class ForwardedHostTest extends TestCase
 
         TrustProxies::withHeaders(Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PREFIX);
 
-        $this->assertSame('https://cdn.example.org/prefix/path', $this->url('app.example.com'));
+        $this->assertSame('https://app.example.com/path', $this->url('app.example.com'));
     }
 
     private function url(string $host): string

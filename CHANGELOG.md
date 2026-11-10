@@ -6,10 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Security
-* On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers, for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains, unless the application configures its trusted proxies. They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::forceRootUrl()`.
+* On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers, for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains, unless the application configures its trusted proxies (`config/trustedproxy.php`, `TrustProxies::at()`, or the `$proxies` property of its `TrustProxies` middleware). They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::forceRootUrl()`.
 
 ### Fixed
-* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced.
+* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced. If this file lists IP addresses, it must include `127.0.0.1` with PHP-FPM: otherwise `$request->ip()` returns `127.0.0.1` for every request.
 
 ### Changed
 * `riverline/multipart-parser` 2.3 is now required. It limits a multipart body to 1000 parts: above that, the body is ignored.
