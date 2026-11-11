@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * If your own CloudFront distribution calls a custom domain on API Gateway and sets `X-Forwarded-Host`, generated URLs now use the domain of API Gateway: use `URL::forceRootUrl()`, or configure your trusted proxies.
 
 ### Fixed
-* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced. If this file lists IP addresses, they now apply: with PHP-FPM, the list must include `127.0.0.1`, otherwise the `X-Forwarded-*` headers are ignored, generated URLs use the AWS domain behind CloudFront, and `$request->ip()` returns `127.0.0.1`.
+* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced. If this file lists IP addresses, they now apply: with PHP-FPM, the list must include `127.0.0.1`, otherwise the `X-Forwarded-*` headers are ignored, generated URLs use the AWS domain behind CloudFront, and `$request->ip()` returns `127.0.0.1`. Bref 3.0.16 is now required: it tells PHP which requests use HTTPS, so detecting HTTPS no longer depends on the trusted proxies.
 
 ### Changed
 * `riverline/multipart-parser` 2.3 is now required. It limits a multipart body to 1000 parts: above that, the body is ignored.
