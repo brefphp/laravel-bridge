@@ -8,6 +8,7 @@ use Bref\Context\Context;
 use Bref\Event\Http\HttpRequestEvent;
 use Bref\LaravelBridge\BrefServiceProvider;
 use Bref\LaravelBridge\Http\HttpHandler;
+use Bref\LaravelBridge\Http\Middleware\IgnoreForwardedHostOnCustomDomains;
 use Bref\LaravelBridge\Tests\TestCase;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -71,11 +72,40 @@ class ForwardedHostTest extends TestCase
         $this->assertSame('https://app.example.com/path', $response->toApiGatewayFormatV2()['body']);
     }
 
+    public function testTheProtocolIsStillTrustedOnACustomDomain(): void
+    {
+        $this->assertSame('https://app.example.com/path', $this->url('app.example.com', 'http', ['HTTP_X_FORWARDED_PROTO' => 'https']));
+    }
+
+    public function testTheForwardedHeaderIsIgnoredOnACustomDomain(): void
+    {
+        if (! method_exists(TrustProxies::class, 'withHeaders')) {
+            $this->markTestSkipped('TrustProxies::withHeaders() was added in Laravel 11');
+        }
+
+        TrustProxies::withHeaders(Request::HEADER_FORWARDED);
+
+        $this->assertSame('https://app.example.com/path', $this->url('app.example.com', 'https', ['HTTP_FORWARDED' => 'host=attacker.example;proto=https']));
+    }
+
     public function testTheHeadersAreUsedOnAnAwsDomain(): void
     {
-        foreach (['abc123.execute-api.eu-west-1.amazonaws.com', 'abc123.lambda-url.eu-west-1.on.aws'] as $host) {
+        foreach (['abc123.execute-api.eu-west-1.amazonaws.com', 'abc123.lambda-url.eu-west-1.on.aws', 'abc123.lambda-url.eu-west-1.on.aws:8443'] as $host) {
             $this->assertSame('https://cdn.example.org/prefix/path', $this->url($host));
         }
+    }
+
+    public function testTheMiddlewareRunsRightAfterTrustProxies(): void
+    {
+        $kernel = $this->app->make(Kernel::class);
+        if (! method_exists($kernel, 'setGlobalMiddleware')) {
+            $this->markTestSkipped('The global middleware can only be reordered since Laravel 11');
+        }
+
+        $middleware = $kernel->getGlobalMiddleware();
+        $position = array_search(TrustProxies::class, $middleware, true);
+
+        $this->assertSame(IgnoreForwardedHostOnCustomDomains::class, $middleware[$position + 1]);
     }
 
     public function testTheTrustedProxiesOfTheConfigurationAreKept(): void
@@ -118,10 +148,10 @@ class ForwardedHostTest extends TestCase
         $this->assertSame('https://app.example.com/path', $this->url('app.example.com'));
     }
 
-    private function url(string $host): string
+    private function url(string $host, string $scheme = 'https', array $server = []): string
     {
         // Under PHP-FPM, Bref sets REMOTE_ADDR to 127.0.0.1
-        $request = Request::create("https://$host/url", 'GET', [], [], [], [
+        $request = Request::create("$scheme://$host/url", 'GET', [], [], [], $server + [
             'REMOTE_ADDR' => '127.0.0.1',
             'HTTP_X_FORWARDED_HOST' => 'cdn.example.org',
             'HTTP_X_FORWARDED_PREFIX' => '/prefix',

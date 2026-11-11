@@ -8,10 +8,10 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * Clients can send X-Forwarded-Host and X-Forwarded-Prefix through API Gateway, and Bref trusts all proxies
+ * Clients can send X-Forwarded-Host, X-Forwarded-Prefix and Forwarded through API Gateway, and Bref trusts all proxies
  * by default: without this, they could choose the domain of the URLs generated on a custom domain.
  *
- * Runs after the TrustProxies middleware, to know which proxies it trusted.
+ * Runs right after the TrustProxies middleware, to know which proxies it trusted.
  */
 class IgnoreForwardedHostOnCustomDomains
 {
@@ -27,7 +27,8 @@ class IgnoreForwardedHostOnCustomDomains
         // The CloudFront distributions created by Lift set X-Forwarded-Host,
         // because they call the application on its AWS domain.
         // On any other domain, the Host header is already the right one.
-        $isAwsDomain = preg_match('/\.(amazonaws\.com|on\.aws)$/iD', (string) $request->headers->get('Host')) === 1;
+        $host = preg_replace('/:\d+$/', '', (string) $request->headers->get('Host'));
+        $isAwsDomain = preg_match('/\.(amazonaws\.com|on\.aws)$/iD', (string) $host) === 1;
 
         // Applications that configure their trusted proxies decide which headers they trust
         $usesDefaultTrustedProxies = Request::getTrustedProxies() === BrefServiceProvider::TRUSTED_PROXIES;
@@ -35,6 +36,7 @@ class IgnoreForwardedHostOnCustomDomains
         if (! $isAwsDomain && $usesDefaultTrustedProxies) {
             $request->headers->remove('X-Forwarded-Host');
             $request->headers->remove('X-Forwarded-Prefix');
+            $request->headers->remove('Forwarded');
         }
 
         return $next($request);

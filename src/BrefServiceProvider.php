@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
@@ -89,7 +90,7 @@ class BrefServiceProvider extends ServiceProvider
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
         if (isset($_SERVER['LAMBDA_TASK_ROOT'])) {
-            $this->app[Kernel::class]->pushMiddleware(Http\Middleware\IgnoreForwardedHostOnCustomDomains::class);
+            $this->registerForwardedHostMiddleware($this->app[Kernel::class]);
         }
 
         if ($this->app->runningInConsole()) {
@@ -305,5 +306,26 @@ class BrefServiceProvider extends ServiceProvider
         if (Config::get('services.ses.key') === $accessKeyId) {
             Config::set('services.ses.token', $sessionToken);
         }
+    }
+
+    /**
+     * Right after TrustProxies: the middleware needs the proxies it trusted,
+     * and the global middleware of the application must not see the headers it removes.
+     */
+    private function registerForwardedHostMiddleware(Kernel $kernel): void
+    {
+        $middleware = method_exists($kernel, 'getGlobalMiddleware') ? $kernel->getGlobalMiddleware() : [];
+
+        foreach ($middleware as $index => $class) {
+            if (is_a($class, TrustProxies::class, true) && method_exists($kernel, 'setGlobalMiddleware')) {
+                array_splice($middleware, $index + 1, 0, [Http\Middleware\IgnoreForwardedHostOnCustomDomains::class]);
+                $kernel->setGlobalMiddleware($middleware);
+
+                return;
+            }
+        }
+
+        // Laravel 10 can't insert a global middleware after another one
+        $kernel->pushMiddleware(Http\Middleware\IgnoreForwardedHostOnCustomDomains::class);
     }
 }

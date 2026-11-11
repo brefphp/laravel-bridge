@@ -6,10 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Security
-* On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers, for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains, unless the application configures its trusted proxies (`config/trustedproxy.php`, `TrustProxies::at()`, or the `$proxies` property of its `TrustProxies` middleware). They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::forceRootUrl()`.
+* On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host`, `X-Forwarded-Prefix` or `Forwarded` headers, for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains when Bref's default trusted proxies apply. They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::forceRootUrl()`.
+* Applications that configure their trusted proxies themselves (`config/trustedproxy.php`, `TrustProxies::at()`, or the `$proxies` property of their `TrustProxies` middleware) are not changed. If they trust every proxy, for example with `'*'`, clients can still set these headers: use `URL::forceRootUrl()`.
+* If your own CloudFront distribution calls a custom domain on API Gateway and sets `X-Forwarded-Host`, generated URLs now use the domain of API Gateway: use `URL::forceRootUrl()`, or configure your trusted proxies.
 
 ### Fixed
-* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced. If this file lists IP addresses, it must include `127.0.0.1` with PHP-FPM: otherwise `$request->ip()` returns `127.0.0.1` for every request.
+* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced. If this file lists IP addresses, they now apply: with PHP-FPM, the list must include `127.0.0.1`, otherwise the `X-Forwarded-*` headers are ignored, generated URLs use the AWS domain behind CloudFront, and `$request->ip()` returns `127.0.0.1`.
 
 ### Changed
 * `riverline/multipart-parser` 2.3 is now required. It limits a multipart body to 1000 parts: above that, the body is ignored.
