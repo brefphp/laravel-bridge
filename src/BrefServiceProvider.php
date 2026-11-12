@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
@@ -32,6 +33,12 @@ use Throwable;
 
 class BrefServiceProvider extends ServiceProvider
 {
+    /**
+     * Trusted when the application doesn't configure its trusted proxies:
+     * the IP addresses of API Gateway and CloudFront are not known in advance.
+     */
+    public const TRUSTED_PROXIES = ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3'];
+
     /**
      * Set up Bref integration.
      *
@@ -54,7 +61,9 @@ class BrefServiceProvider extends ServiceProvider
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
 
-        Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
+        if (empty(Config::get('trustedproxy.proxies'))) {
+            Config::set('trustedproxy.proxies', self::TRUSTED_PROXIES);
+        }
 
         // If the views were not compiled yet, move them to a writable directory
         $currentCompiledPath = Config::get('view.compiled');
@@ -79,6 +88,10 @@ class BrefServiceProvider extends ServiceProvider
     public function boot(Dispatcher $dispatcher, LogManager $logManager, FailedJobProviderInterface $queueFailer)
     {
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
+
+        if (isset($_SERVER['LAMBDA_TASK_ROOT'])) {
+            $this->registerForwardedHostMiddleware($this->app[Kernel::class]);
+        }
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
@@ -293,5 +306,26 @@ class BrefServiceProvider extends ServiceProvider
         if (Config::get('services.ses.key') === $accessKeyId) {
             Config::set('services.ses.token', $sessionToken);
         }
+    }
+
+    /**
+     * Right after TrustProxies: the middleware needs the proxies it trusted,
+     * and the global middleware of the application must not see the headers it removes.
+     */
+    private function registerForwardedHostMiddleware(Kernel $kernel): void
+    {
+        $middleware = method_exists($kernel, 'getGlobalMiddleware') ? $kernel->getGlobalMiddleware() : [];
+
+        foreach ($middleware as $index => $class) {
+            if (is_a($class, TrustProxies::class, true) && method_exists($kernel, 'setGlobalMiddleware')) {
+                array_splice($middleware, $index + 1, 0, [Http\Middleware\IgnoreForwardedHostOnCustomDomains::class]);
+                $kernel->setGlobalMiddleware($middleware);
+
+                return;
+            }
+        }
+
+        // Laravel 10 can't insert a global middleware after another one
+        $kernel->pushMiddleware(Http\Middleware\IgnoreForwardedHostOnCustomDomains::class);
     }
 }
