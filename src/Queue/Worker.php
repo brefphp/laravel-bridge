@@ -3,6 +3,7 @@
 namespace Bref\LaravelBridge\Queue;
 
 use Illuminate\Contracts\Queue\Job;
+use Illuminate\Queue\TimeoutExceededException;
 use Illuminate\Queue\WorkerOptions;
 use Illuminate\Queue\Worker as LaravelWorker;
 use Throwable;
@@ -19,10 +20,14 @@ class Worker extends LaravelWorker
         pcntl_async_signals(true);
 
         pcntl_signal(SIGALRM, function () use ($job) {
+            // The job timed out: fail it with Laravel's timeout exception, not "attempted too many times"
+            // (TimeoutExceededException exists since Laravel 10.20)
             $this->markJobAsFailedIfItShouldFailOnTimeout(
                 $job->getConnectionName(),
                 $job,
-                $this->maxAttemptsExceededException($job),
+                class_exists(TimeoutExceededException::class)
+                    ? TimeoutExceededException::forJob($job)
+                    : $this->maxAttemptsExceededException($job),
             );
 
             // exit so that PHP will shutdown and close DB connections etc.
