@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.1.7]
 ### Security
 * On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers (or `Forwarded`, when the application trusts it), for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains when Bref's default trusted proxies apply. They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::forceRootUrl()`.
 * Applications that configure their trusted proxies themselves (`config/trustedproxy.php`, `TrustProxies::at()`, or the `$proxies` property of their `TrustProxies` middleware): Bref removes no header for them. If they trust every proxy, for example with `'*'`, clients can still set these headers: use `URL::forceRootUrl()`.
