@@ -64,7 +64,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Lambda limits request bodies to a few megabytes. To upload larger files,
-    | the browser asks this route for a presigned S3 URL and uploads the file
+    | the browser asks this route for a presigned S3 form and uploads the file
     | directly to S3 under a temporary prefix. The application then validates
     | the key with the `Bref\LaravelBridge\Upload\UploadedToS3` rule and copies
     | the file to its final location with `Storage::copy()`.
@@ -87,9 +87,9 @@ return [
         'disk' => null,
         // S3 prefix of temporary uploads. Configure an S3 lifecycle rule to expire this prefix.
         'prefix' => 'tmp',
-        // Validity of presigned URLs, in minutes
+        // Validity of presigned forms, in minutes
         'expires' => 5,
-        // Maximum size in bytes, checked by the validation rule (null = no limit)
+        // Maximum size in bytes, enforced by S3 and checked by the validation rule (null = no limit)
         'max_size' => 50 * 1024 * 1024, // 50 MB
     ],
 
