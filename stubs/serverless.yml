@@ -17,6 +17,8 @@ provider:
         # Uncomment the line below if you uncomment `constructs.website`
         #APP_URL: ${construct:website.url}
         SESSION_DRIVER: cookie # Change to database if you have set up a database
+        # Not shared between requests: use database (or dynamodb) for a shared cache, see https://bref.sh/docs/laravel/caching
+        CACHE_STORE: array
         # Maintenance mode: https://bref.sh/docs/laravel/maintenance-mode
         MAINTENANCE_MODE: ${param:maintenance, null}
         # Logging configuration: https://bref.sh/docs/environment/logs
@@ -133,5 +135,5 @@ plugins:
     # We need to include the Bref plugin
     - ./vendor/bref/bref
     # Uncomment the Serverless Lift plugin if you use constructs
-    # See https://github.com/getlift/lift
-    - serverless-lift
+    # Install it with `npm install --save-dev serverless-lift`, see https://github.com/getlift/lift
+    #- serverless-lift

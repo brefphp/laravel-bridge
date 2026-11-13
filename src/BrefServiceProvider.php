@@ -7,6 +7,7 @@ use Bref\LaravelBridge\Console\Commands\QueueFailedJobsCountCommand;
 use Bref\LaravelBridge\Console\Commands\QueueFailedJobsListCommand;
 use Bref\LaravelBridge\Console\Commands\QueueFailedJobsShowCommand;
 use Bref\LaravelBridge\Queue\QueueHandler;
+use Bref\LaravelBridge\Upload\SignedUploadUrlController;
 
 use Bref\Monolog\CloudWatchFormatter;
 use Illuminate\Console\Events\ScheduledTaskStarting;
@@ -14,10 +15,13 @@ use Illuminate\Console\Events\ScheduledTaskStarting;
 use Illuminate\Log\LogManager;
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
@@ -25,8 +29,16 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Failed\FailedJobProviderInterface;
 
+use Throwable;
+
 class BrefServiceProvider extends ServiceProvider
 {
+    /**
+     * Trusted when the application doesn't configure its trusted proxies:
+     * the IP addresses of API Gateway and CloudFront are not known in advance.
+     */
+    public const TRUSTED_PROXIES = ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3'];
+
     /**
      * Set up Bref integration.
      *
@@ -49,7 +61,9 @@ class BrefServiceProvider extends ServiceProvider
 
         Config::set('app.mix_url', Config::get('app.asset_url'));
 
-        Config::set('trustedproxy.proxies', ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3']);
+        if (empty(Config::get('trustedproxy.proxies'))) {
+            Config::set('trustedproxy.proxies', self::TRUSTED_PROXIES);
+        }
 
         // If the views were not compiled yet, move them to a writable directory
         $currentCompiledPath = Config::get('view.compiled');
@@ -75,6 +89,10 @@ class BrefServiceProvider extends ServiceProvider
     {
         $this->app[Kernel::class]->pushMiddleware(Http\Middleware\ServeStaticAssets::class);
 
+        if (isset($_SERVER['LAMBDA_TASK_ROOT'])) {
+            $this->registerForwardedHostMiddleware($this->app[Kernel::class]);
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../stubs/serverless.yml' => base_path('serverless.yml'),
@@ -83,7 +101,14 @@ class BrefServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../config/bref.php' => config_path('bref.php'),
             ], 'bref-config');
+
+            $this->publishes([
+                __DIR__ . '/../resources/js/bref-upload.js' => resource_path('js/bref-upload.js'),
+                __DIR__ . '/../resources/js/bref-upload.d.ts' => resource_path('js/bref-upload.d.ts'),
+            ], 'bref-upload');
         }
+
+        $this->registerUploadRoute();
 
         if (config('bref.log_jobs', true)) {
             $this->enableDetailedJobLogging($dispatcher, $logManager, $queueFailer);
@@ -108,6 +133,31 @@ class BrefServiceProvider extends ServiceProvider
             $this->commands([
                 BrefTinkerCommand::class,
             ]);
+        }
+    }
+
+    /**
+     * Register the route that returns presigned S3 upload URLs.
+     */
+    private function registerUploadRoute(): void
+    {
+        $path = Config::get('bref.uploads.route', '/signed-upload-url');
+        if (! is_string($path)) {
+            return;
+        }
+
+        // When routes are cached, the route is already part of the cache
+        if ($this->app->routesAreCached()) {
+            return;
+        }
+
+        $route = Route::post($path, SignedUploadUrlController::class)
+            ->middleware(Config::get('bref.uploads.middleware', ['web', 'auth']))
+            ->name('bref.uploads.signed-url');
+
+        $throttle = Config::get('bref.uploads.throttle');
+        if (is_string($throttle) && $throttle !== '') {
+            $route->middleware('throttle:' . $throttle);
         }
     }
 
@@ -137,19 +187,26 @@ class BrefServiceProvider extends ServiceProvider
             )
         );
 
-        $dispatcher->listen(
-            fn (JobFailed $event) => $queueFailer->log(
-                $event->connectionName,
-                $event->job->getQueue(),
-                $event->job->getRawBody(),
-                $event->exception
-            )
-        );
+        $dispatcher->listen(function (JobFailed $event) use ($queueFailer) {
+            try {
+                $queueFailer->log(
+                    $event->connectionName,
+                    $event->job->getQueue(),
+                    $event->job->getRawBody(),
+                    $event->exception
+                );
+            } catch (Throwable $e) {
+                // Report the error instead of throwing it: a thrown exception would replace
+                // the job's own exception, which would then never be reported.
+                $this->app->make(ExceptionHandler::class)->report($e);
+            }
+        });
     }
 
     /**
      * Add the request identifier to the shared log context.
      *
+     * @deprecated The `bref.request_context` option will be removed in the next major version.
      * @return void
      */
     protected function shareRequestContext()
@@ -249,5 +306,26 @@ class BrefServiceProvider extends ServiceProvider
         if (Config::get('services.ses.key') === $accessKeyId) {
             Config::set('services.ses.token', $sessionToken);
         }
+    }
+
+    /**
+     * Right after TrustProxies: the middleware needs the proxies it trusted,
+     * and the global middleware of the application must not see the headers it removes.
+     */
+    private function registerForwardedHostMiddleware(Kernel $kernel): void
+    {
+        $middleware = method_exists($kernel, 'getGlobalMiddleware') ? $kernel->getGlobalMiddleware() : [];
+
+        foreach ($middleware as $index => $class) {
+            if (is_a($class, TrustProxies::class, true) && method_exists($kernel, 'setGlobalMiddleware')) {
+                array_splice($middleware, $index + 1, 0, [Http\Middleware\IgnoreForwardedHostOnCustomDomains::class]);
+                $kernel->setGlobalMiddleware($middleware);
+
+                return;
+            }
+        }
+
+        // Laravel 10 can't insert a global middleware after another one
+        $kernel->pushMiddleware(Http\Middleware\IgnoreForwardedHostOnCustomDomains::class);
     }
 }

@@ -6,6 +6,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.1.7]
+### Security
+* On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers (or `Forwarded`, when the application trusts it), for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains when Bref's default trusted proxies apply. They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::useOrigin()` (`URL::forceRootUrl()` on Laravel 10).
+* Applications that configure their trusted proxies themselves (`config/trustedproxy.php`, `TrustProxies::at()`, or the `$proxies` property of their `TrustProxies` middleware): Bref removes no header for them. If they trust every proxy, for example with `'*'`, clients can still set these headers: use `URL::useOrigin()` (`URL::forceRootUrl()` on Laravel 10).
+* If your own CloudFront distribution calls a custom domain on API Gateway and sets `X-Forwarded-Host`, generated URLs now use the domain of API Gateway: use `URL::useOrigin()` (`URL::forceRootUrl()` on Laravel 10), or configure your trusted proxies.
+
+### Fixed
+* The trusted proxies configured in `config/trustedproxy.php` are no longer replaced. If this file lists IP addresses, they now apply: with PHP-FPM, the list must include `127.0.0.1` (in the function runtime and with Octane, no IP address list can match: use `'*'`), otherwise the `X-Forwarded-*` headers are ignored, generated URLs use the AWS domain behind CloudFront, and `$request->ip()` returns `127.0.0.1`. Bref 3.0.16 is now required: it tells PHP which requests use HTTPS, so detecting HTTPS no longer depends on the trusted proxies.
+
+### Changed
+* `riverline/multipart-parser` 2.3 is now required. It limits a multipart body to 1000 parts: above that, the body is ignored.
+
+## [v3.1.4]
+### Deprecated
+* The `bref.request_context` config option: it adds the `X-Request-ID` header to the shared log context, and API Gateway does not send that header (only the Octane and function runtimes of this package set it), so the option did nothing with PHP-FPM. On Lambda, Bref's log formatter now starts every log line with the request ID: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). The option will be removed in the next major version.
+
+### Fixed
+* The Octane handler and `Bref\LaravelBridge\Http\HttpHandler` never deleted the files uploaded with a request: they stayed in the reused Lambda instance's `/tmp` until it was full. Like Bref's PSR-15 handler, they now delete the previous request's uploads when a request starts. Bref 3.0.13 is now required: before it, Bref's cleanup missed every upload on PHP 8.4 and up.
+* When a failed job could not be stored (for example with the default `database-uuids` failed job driver in an application without a database), the error replaced the job's own exception, which was never logged or reported. Both errors are now reported.
+
+## [v3.1.3]
+### Changed
+* Allow `bref/monolog-bridge` 2.0: on Lambda, log lines start with the request ID of the invocation, so that all the logs of a request can be found with it: [documentation](https://bref.sh/docs/environment/logs#logs-of-a-single-request). To keep the previous log format, require `bref/monolog-bridge: ^1.0` in your application.
+
+## [v3.1.2]
+### Changed
+* The `serverless-lift` plugin is commented out in the `serverless.yml` stub, like the constructs: the first deployment of a new application no longer fails when Lift is not installed. Install Lift and uncomment the plugin to use constructs.
+
+## [v3.1.1]
+### Added
+* `bref.stack_name` config value: the name of the CloudFormation stack (`BREF_STACK_NAME` environment variable, set by Bref when deploying with `serverless.yml`). It lets applications forward queue names to Lift queues: [documentation](https://bref.sh/docs/laravel/queues#multiple-queues).
+
+## [v3.1.0]
+### Added
+* Simple large file uploads via presigned S3 uploads: [documentation](https://bref.sh/docs/laravel/file-storage#large-files).
+  This registers `POST /signed-upload-url` by default, protected by authentication and the `uploadFiles` gate. Set `bref.uploads.route` to `null` to disable the route.
+
 ## [v3.0.0]
 * Support [Bref v3](https://bref.sh/news/03-bref-3.0)
 * Improve the default `serverless.yml` config
