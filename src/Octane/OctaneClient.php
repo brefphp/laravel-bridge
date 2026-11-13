@@ -116,6 +116,8 @@ class OctaneClient implements Client
     {
         try {
             static::send($response->response, $this->request, $this->writer, $response->outputBuffer);
+            // The client gets the response now: Octane's terminate work (defer(), terminating callbacks...) runs after
+            $this->writer->end();
         } catch (Throwable $e) {
             $this->responseError = $e;
             throw $e;
