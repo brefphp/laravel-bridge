@@ -60,7 +60,7 @@ class OctaneHandlerTest extends TestCase
         $previousUpload = sys_get_temp_dir() . '/bref_upload_' . bin2hex(random_bytes(3));
         touch($previousUpload);
 
-        $this->handlerWithRoutes(fn () => null)->handle($this->event('/', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
+        $this->handlerWithRoutes(fn () => null)->handle($this->event('/', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake())->contents();
 
         $this->assertFileDoesNotExist($previousUpload);
     }
@@ -91,14 +91,16 @@ class OctaneHandlerTest extends TestCase
 
         $chunks = $this->stream($handler, '/stream', function () use (&$log) {
             $log[] = 'chunk';
+        }, function () use (&$log) {
+            $log[] = 'end';
         });
 
         $metadata = json_decode(substr($chunks[0], 0, -8), true);
         $this->assertSame(201, $metadata['statusCode']);
         $this->assertSame('value', $metadata['headers']['X-Custom']);
         $this->assertSame('Hello world', implode('', array_slice($chunks, 1)));
-        // Sent as they are produced, then Laravel finishes the request
-        $this->assertSame(['chunk', 'between', 'chunk', 'terminate'], $log);
+        // Sent as they are produced, then the client gets the end of the response, then Laravel finishes the request
+        $this->assertSame(['chunk', 'between', 'chunk', 'end', 'terminate'], $log);
     }
 
     /**
@@ -189,9 +191,12 @@ class OctaneHandlerTest extends TestCase
         });
 
         // API Gateway HTTP API: no streaming
-        $result = $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
+        $body = '';
+        $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake())->writeTo(function (string $chunk) use (&$body) {
+            $body .= $chunk;
+        });
 
-        $this->assertSame('Hello world', $result['body']);
+        $this->assertSame('Hello world', json_decode($body, true)['body']);
     }
 
     /**
@@ -227,7 +232,7 @@ class OctaneHandlerTest extends TestCase
      *
      * @return string[] The chunks: the status and headers, then the body
      */
-    private function stream(OctaneHandler $handler, string $path, ?callable $onBodyChunk = null): array
+    private function stream(OctaneHandler $handler, string $path, ?callable $onBodyChunk = null, ?callable $onEnd = null): array
     {
         putenv('BREF_RESPONSE_STREAMING=1');
         $chunks = [];
@@ -236,7 +241,7 @@ class OctaneHandlerTest extends TestCase
             if ($onBodyChunk && count($chunks) > 1) {
                 $onBodyChunk($chunk);
             }
-        });
+        }, $onEnd);
 
         return $chunks;
     }
