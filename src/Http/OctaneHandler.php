@@ -13,6 +13,8 @@ use Bref\Event\Http\HttpResponse;
 use Bref\Event\Http\HttpRequestEvent;
 use Bref\Event\Http\Psr7Bridge;
 
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 class OctaneHandler extends HttpHandler
 {
     private OctaneClient $octaneClient;
@@ -48,8 +50,13 @@ class OctaneHandler extends HttpHandler
             $response->prepare($request); // https://github.com/laravel/framework/pull/43895
         }
 
+        // A streamed response's body is produced while Bref sends it: Octane is still handling the request
+        $body = $response instanceof StreamedResponse
+            ? $this->octaneClient->sendStreamedBody(...)
+            : ResponseBodyExtractor::extract($response);
+
         return new HttpResponse(
-            ResponseBodyExtractor::extract($response),
+            $body,
             $response->headers->all(),
             $response->getStatusCode()
         );

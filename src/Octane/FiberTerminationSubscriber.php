@@ -9,12 +9,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Throwable;
 
 /**
- * Terminates the Octane request fiber once the Lambda invocation has ended.
- *
- * When running in streaming mode, the fiber handling the request is suspended
- * while the response body is streamed to the client. This subscriber resumes
- * the fiber after the invocation so that Octane can finish the request
- * lifecycle (request handled callbacks, request termination, sandbox flush).
+ * Finishes the Octane request whose streamed body was not sent, once the Lambda invocation has ended
+ * (e.g. it failed before Bref sent the response), instead of waiting for the next request.
  *
  * @internal
  */

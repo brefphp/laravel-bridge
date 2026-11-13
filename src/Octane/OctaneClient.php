@@ -3,6 +3,7 @@
 namespace Bref\LaravelBridge\Octane;
 
 use Bref\Bref;
+use Fiber;
 use RuntimeException;
 use Throwable;
 
@@ -17,6 +18,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OctaneClient implements Client
 {
@@ -26,21 +28,20 @@ class OctaneClient implements Client
     private Worker $worker;
 
     /**
-     * The fiber handling the current request, only set when running in
-     * streaming mode with fiber support.
+     * The response of the last request that was processed.
      */
-    protected \Fiber|null $handleCurrentFiber = null;
+    private OctaneResponse|null $response = null;
 
     /**
-     * Whether the current fiber already suspended with its response.
+     * Handles the current request. It is suspended with a streamed response before its body is sent,
+     * and resumed with the function that sends each chunk (see sendStreamedBody()).
      */
-    protected bool $currentFiberHasResponded = false;
+    private Fiber|null $requestFiber = null;
 
     /**
-     * The response of the last request that was processed, only set when not
-     * running in streaming mode with fiber support.
+     * The exception thrown while sending the last streamed body, if any.
      */
-    private OctaneResponse|null $response;
+    private Throwable|null $streamError = null;
 
     public function __construct(string $basePath, bool $persistDatabaseSession)
     {
@@ -56,18 +57,25 @@ class OctaneClient implements Client
     /**
      * Handle the given request.
      *
+     * A streamed response is returned before its body is produced: send it with sendStreamedBody().
+     *
      * @param  \Illuminate\Http\Request  $request
      * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handle(Request $request): Response
     {
-        if ($this->streamingWithFibers()) {
-            return $this->handleFiberableRequest($request);
+        $this->ensureExistingFiberIsTerminated();
+
+        $this->requestFiber = new Fiber(function () use ($request): void {
+            $this->worker->application()->useStoragePath('/tmp/storage');
+
+            $this->worker->handle($request, new RequestContext());
+        });
+        $streamed = $this->requestFiber->start();
+        if ($streamed instanceof StreamedResponse) {
+            return $streamed;
         }
-
-        $this->worker->application()->useStoragePath('/tmp/storage');
-
-        $this->worker->handle($request, new RequestContext());
+        $this->requestFiber = null;
 
         if (! $this->response instanceof OctaneResponse) {
             throw new RuntimeException('Octane handled the request without responding.');
@@ -80,87 +88,39 @@ class OctaneClient implements Client
     }
 
     /**
-     * Terminate the previous request's fiber so that Octane finishes its
-     * lifecycle (request handled callbacks, termination, sandbox flush) once
-     * the streamed response has been sent.
+     * Send the body of the streamed response returned by handle(): Octane resumes, runs the response's
+     * callback, then finishes the request (terminate callbacks, sandbox flush).
+     *
+     * @param callable(string): mixed $write Sends a chunk of the body.
+     */
+    public function sendStreamedBody(callable $write): void
+    {
+        $fiber = $this->requestFiber;
+        $this->requestFiber = null;
+        $fiber?->resume($write);
+        $this->response = null;
+
+        // Octane only reports it: rethrow it so that Bref reports the failed invocation too
+        [$error, $this->streamError] = [$this->streamError, null];
+        if ($error) {
+            throw $error;
+        }
+    }
+
+    /**
+     * Finish the request whose streamed body was never sent (e.g. the invocation failed before):
+     * Octane must end it before handling another one.
      */
     public function ensureExistingFiberIsTerminated(): void
     {
-        $fiber = $this->handleCurrentFiber;
-        $this->handleCurrentFiber = null;
-        $this->currentFiberHasResponded = false;
-
-        if (! $fiber instanceof \Fiber || ! $fiber->isStarted()) {
+        if (! $this->requestFiber?->isSuspended()) {
             return;
         }
-
-        while ($fiber->isSuspended()) {
-            $fiber->resume();
-        }
-    }
-
-    /**
-     * Run the request in a fiber so that Octane's lifecycle stays alive until
-     * the response body has been streamed.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Symfony\Component\HttpFoundation\Response
-     */
-    protected function handleFiberableRequest(Request $request): Response
-    {
-        $this->ensureExistingFiberIsTerminated();
-
-        $this->currentFiberHasResponded = false;
-        $this->handleCurrentFiber = new \Fiber(
-            function () use ($request) {
-                $this->worker->application()->useStoragePath('/tmp/storage');
-
-                $this->worker->handle($request, new RequestContext());
-            }
-        );
-
         try {
-            $octaneResponse = $this->handleCurrentFiber->start();
-
-            if (! $octaneResponse instanceof OctaneResponse) {
-                throw new RuntimeException('Octane handled the request without responding.');
-            }
-
-            return $octaneResponse->response;
-        } finally {
-            // On failure there is nothing left to resume: allow the fiber to
-            // be cleaned up. On success it stays suspended until the response
-            // has been streamed (@see ensureExistingFiberIsTerminated()).
-            if ($this->handleCurrentFiber->isTerminated()) {
-                $this->handleCurrentFiber = null;
-            }
+            $this->sendStreamedBody(fn () => false);
+        } catch (Throwable $e) {
+            fwrite(STDERR, 'The streamed response that was not sent failed: ' . $e->getMessage() . PHP_EOL);
         }
-    }
-
-    /**
-     * Whether we are running in streaming mode with fiber support.
-     *
-     * Without fibers, Octane's lifecycle (e.g. database sessions) finishes
-     * before the body is streamed, which breaks responses that lazily query
-     * the database. `BREF_STREAM_NO_FIBER` opts out of fibers.
-     */
-    protected function streamingWithFibers(): bool
-    {
-        if (! $this->isRunningInStreamingMode()) {
-            return false;
-        }
-
-        return ! (bool) getenv('BREF_STREAM_NO_FIBER');
-    }
-
-    /**
-     * Whether Bref is running in streamed response mode.
-     *
-     * This mirrors `Bref::isRunningInStreamingMode()` (see bref/bref).
-     */
-    private function isRunningInStreamingMode(): bool
-    {
-        return (bool) getenv('BREF_STREAMED_MODE');
     }
 
     /**
@@ -169,24 +129,17 @@ class OctaneClient implements Client
     public function error(Throwable $exception, Application $app, Request $request, RequestContext $context): void
     {
         try {
-            $octaneResponse = new OctaneResponse(
+            $this->response = new OctaneResponse(
                 $app[ExceptionHandler::class]->render($request, $exception)
             );
         } catch (Throwable $throwable) {
             fwrite(STDERR, $throwable->getMessage());
             fwrite(STDERR, $exception->getMessage());
 
-            $octaneResponse = new OctaneResponse(
+            $this->response = new OctaneResponse(
                 new Response('Internal Server Error', 500)
             );
         }
-
-        if ($this->streamingWithFibers() && $this->currentFiberHasResponded) {
-            fwrite(STDERR, 'Request failed and already started sending: ' . $exception->getMessage());
-            return;
-        }
-
-        $this->handOffResponse($octaneResponse);
     }
 
     /**
@@ -194,34 +147,31 @@ class OctaneClient implements Client
      */
     public function respond(RequestContext $context, OctaneResponse $response): void
     {
-        $this->handOffResponse($response);
-    }
-
-    /**
-     * Send the Octane response to the client.
-     *
-     * In streaming mode the fiber suspends so that the response body is
-     * streamed before Octane finishes the request lifecycle; it is resumed
-     * once the invocation has ended (@see FiberTerminationSubscriber).
-     */
-    protected function handOffResponse(OctaneResponse $octaneResponse): void
-    {
-        if ($this->streamingWithFibers()) {
-            // Only suspend when running inside the request fiber: Octane may
-            // call this method from elsewhere (e.g. static files or tasks),
-            // where suspending would throw a fatal error.
-            if (\Fiber::getCurrent() === $this->handleCurrentFiber) {
-                if (! $this->currentFiberHasResponded) {
-                    $this->currentFiberHasResponded = true;
-
-                    \Fiber::suspend($octaneResponse);
+        // Streamed responses are sent while their callback runs, inside the request (see handle()).
+        // Octane may respond outside of it (e.g. static files): there is no request Fiber to suspend then.
+        if ($response->response instanceof StreamedResponse && $this->requestFiber !== null && Fiber::getCurrent() === $this->requestFiber) {
+            // Hand the status and headers over: sendStreamedBody() resumes with the function that sends a chunk
+            $write = Fiber::suspend($response->response);
+            // Each output is sent from the output handler itself: no Fiber switch in there, PHP would
+            // consider any output from outside as output from the handler
+            ob_start(function (string $buffer) use ($write): string {
+                if ($buffer !== '') {
+                    $write($buffer);
                 }
 
-                return;
+                return '';
+            }, 1);
+            try {
+                $response->response->sendContent();
+            } catch (Throwable $e) {
+                $this->streamError = $e;
+                throw $e;
+            } finally {
+                ob_end_clean();
             }
         }
 
-        $this->response = $octaneResponse;
+        $this->response = $response;
     }
 
     /**
