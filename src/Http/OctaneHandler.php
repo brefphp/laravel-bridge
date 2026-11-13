@@ -9,11 +9,9 @@ use Illuminate\Http\Request;
 
 use Bref\Context\Context;
 use Bref\Event\Http\HttpHandler;
-use Bref\Event\Http\HttpResponse;
 use Bref\Event\Http\HttpRequestEvent;
+use Bref\Event\Http\HttpResponseWriter;
 use Bref\Event\Http\Psr7Bridge;
-
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OctaneHandler extends HttpHandler
 {
@@ -30,7 +28,7 @@ class OctaneHandler extends HttpHandler
     /**
      * {@inheritDoc}
      */
-    public function handleRequest(HttpRequestEvent $event, Context $context): HttpResponse
+    protected function respond(HttpRequestEvent $event, Context $context, HttpResponseWriter $writer): void
     {
         // Delete the files uploaded with the previous request, like Bref's Psr15Handler does:
         // the Lambda instance is reused, and its /tmp would otherwise keep every upload until it is full.
@@ -41,24 +39,10 @@ class OctaneHandler extends HttpHandler
         );
 
         if (MaintenanceMode::active()) {
-            $response = MaintenanceMode::response($request)->prepare($request);
-        } else {
-            $response = $this->octaneClient->handle($request);
+            OctaneClient::send(MaintenanceMode::response($request), $request, $writer);
+            return;
         }
 
-        if (! $response->headers->has('Content-Type')) {
-            $response->prepare($request); // https://github.com/laravel/framework/pull/43895
-        }
-
-        // A streamed response's body is produced while Bref sends it: Octane is still handling the request
-        $body = $response instanceof StreamedResponse
-            ? $this->octaneClient->sendStreamedBody(...)
-            : ResponseBodyExtractor::extract($response);
-
-        return new HttpResponse(
-            $body,
-            $response->headers->all(),
-            $response->getStatusCode()
-        );
+        $this->octaneClient->handle($request, $writer);
     }
 }
