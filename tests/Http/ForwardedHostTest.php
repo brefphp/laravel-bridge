@@ -7,8 +7,8 @@ namespace Bref\LaravelBridge\Tests\Http;
 use Bref\Context\Context;
 use Bref\Event\Http\HttpRequestEvent;
 use Bref\LaravelBridge\BrefServiceProvider;
-use Bref\LaravelBridge\Http\HttpHandler;
 use Bref\LaravelBridge\Http\Middleware\IgnoreForwardedHostOnCustomDomains;
+use Bref\LaravelBridge\Http\SymfonyRequestBridge;
 use Bref\LaravelBridge\Tests\TestCase;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -52,9 +52,8 @@ class ForwardedHostTest extends TestCase
 
     public function testTheHeadersAreIgnoredOnACustomDomainInTheFunctionRuntime(): void
     {
-        $handler = new HttpHandler($this->app->make(Kernel::class));
-
-        $response = $handler->handleRequest(new HttpRequestEvent([
+        // Like the Octane handler converts the event
+        $request = SymfonyRequestBridge::convertRequest(new HttpRequestEvent([
             'version' => '2.0',
             'rawPath' => '/url',
             'headers' => [
@@ -69,7 +68,8 @@ class ForwardedHostTest extends TestCase
             ],
         ]), Context::fake());
 
-        $this->assertSame('https://app.example.com/path', $response->toApiGatewayFormatV2()['body']);
+        $response = $this->app->make(Kernel::class)->handle(Request::createFromBase($request));
+        $this->assertSame('https://app.example.com/path', $response->getContent());
     }
 
     public function testTheProtocolIsStillTrustedOnACustomDomain(): void

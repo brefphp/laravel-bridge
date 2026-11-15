@@ -191,12 +191,9 @@ class OctaneHandlerTest extends TestCase
         });
 
         // API Gateway HTTP API: no streaming
-        $body = '';
-        $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake())->writeTo(function (string $chunk) use (&$body) {
-            $body .= $chunk;
-        });
+        $result = $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
 
-        $this->assertSame('Hello world', json_decode($body, true)['body']);
+        $this->assertSame('Hello world', json_decode($result->contents(), true)['body']);
     }
 
     /**
