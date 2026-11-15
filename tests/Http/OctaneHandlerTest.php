@@ -60,7 +60,7 @@ class OctaneHandlerTest extends TestCase
         $previousUpload = sys_get_temp_dir() . '/bref_upload_' . bin2hex(random_bytes(3));
         touch($previousUpload);
 
-        $this->handlerWithRoutes(fn () => null)->handle($this->event('/', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
+        $this->handlerWithRoutes(fn () => null)->handle($this->event('/', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake())->contents();
 
         $this->assertFileDoesNotExist($previousUpload);
     }
@@ -191,7 +191,7 @@ class OctaneHandlerTest extends TestCase
         // API Gateway HTTP API: no streaming
         $result = $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
 
-        $this->assertSame('Hello world', $result['body']);
+        $this->assertSame('Hello world', json_decode($result->contents(), true)['body']);
     }
 
     /**
