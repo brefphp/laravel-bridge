@@ -2,6 +2,8 @@
 
 namespace Bref\LaravelBridge\Octane;
 
+use Bref\Event\Http\HttpResponseWriter;
+use RuntimeException;
 use Throwable;
 
 use Laravel\Octane\Worker;
@@ -24,9 +26,15 @@ class OctaneClient implements Client
     private Worker $worker;
 
     /**
-     * The response of the last request that was processed.
+     * The request being handled, and the writer of its response.
      */
-    private OctaneResponse|null $response;
+    private Request|null $request = null;
+    private HttpResponseWriter|null $writer = null;
+
+    /**
+     * The exception thrown while writing the response, which Octane only reports.
+     */
+    private Throwable|null $responseError = null;
 
     public function __construct(string $basePath, bool $persistDatabaseSession)
     {
@@ -38,21 +46,45 @@ class OctaneClient implements Client
     }
 
     /**
-     * Handle the given request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Symfony\Component\HttpFoundation\Response
+     * Handle the given request, writing its response as it is produced (e.g. streamed responses).
      */
-    public function handle(Request $request): Response
+    public function handle(Request $request, HttpResponseWriter $writer): void
     {
         $this->worker->application()->useStoragePath('/tmp/storage');
 
-        $this->worker->handle($request, new RequestContext);
+        [$this->request, $this->writer] = [$request, $writer];
+        try {
+            $this->worker->handle($request, new RequestContext());
+        } finally {
+            [$this->request, $this->writer] = [null, null];
+        }
 
-        $response = clone $this->response->response;
-        $this->response = null;
+        // Rethrow it so that Bref reports the failed invocation too
+        [$error, $this->responseError] = [$this->responseError, null];
+        if ($error) {
+            throw $error;
+        }
+        if (! $writer->started()) {
+            throw new RuntimeException('Octane handled the request without responding.');
+        }
+    }
 
-        return $response;
+    /**
+     * Write a response: its status and headers, then its content as it is produced (StreamedResponse
+     * callbacks, BinaryFileResponse files...).
+     *
+     * @param string|null $output What the application printed while producing the response.
+     */
+    public static function send(Response $response, Request $request, HttpResponseWriter $writer, ?string $output = null): void
+    {
+        if (! $response->headers->has('Content-Type')) {
+            $response->prepare($request); // https://github.com/laravel/framework/pull/43895
+        }
+
+        $writer->start($response->getStatusCode(), $response->headers->all());
+        // Like Octane's other clients: printed before the response's content
+        $writer->write((string) $output);
+        $writer->capture(fn () => $response->sendContent());
     }
 
     /**
@@ -60,18 +92,21 @@ class OctaneClient implements Client
      */
     public function error(Throwable $exception, Application $app, Request $request, RequestContext $context): void
     {
+        // Too late for an error page: the response has started
+        if ($this->writer?->started()) {
+            return;
+        }
+
         try {
-            $this->response = new OctaneResponse(
-                $app[ExceptionHandler::class]->render($request, $exception)
-            );
+            $response = $app[ExceptionHandler::class]->render($request, $exception);
         } catch (Throwable $throwable) {
             fwrite(STDERR, $throwable->getMessage());
             fwrite(STDERR, $exception->getMessage());
 
-            $this->response = new OctaneResponse(
-                new Response('Internal Server Error', 500)
-            );
+            $response = new Response('Internal Server Error', 500);
         }
+
+        $this->respond($context, new OctaneResponse($response));
     }
 
     /**
@@ -79,7 +114,12 @@ class OctaneClient implements Client
      */
     public function respond(RequestContext $context, OctaneResponse $response): void
     {
-        $this->response = $response;
+        try {
+            static::send($response->response, $this->request, $this->writer, $response->outputBuffer);
+        } catch (Throwable $e) {
+            $this->responseError = $e;
+            throw $e;
+        }
     }
 
     /**
