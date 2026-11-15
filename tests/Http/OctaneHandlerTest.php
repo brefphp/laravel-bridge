@@ -91,14 +91,16 @@ class OctaneHandlerTest extends TestCase
 
         $chunks = $this->stream($handler, '/stream', function () use (&$log) {
             $log[] = 'chunk';
+        }, function () use (&$log) {
+            $log[] = 'end';
         });
 
         $metadata = json_decode(substr($chunks[0], 0, -8), true);
         $this->assertSame(201, $metadata['statusCode']);
         $this->assertSame('value', $metadata['headers']['X-Custom']);
         $this->assertSame('Hello world', implode('', array_slice($chunks, 1)));
-        // Sent as they are produced, then Laravel finishes the request
-        $this->assertSame(['chunk', 'between', 'chunk', 'terminate'], $log);
+        // Sent as they are produced, then the client gets the end of the response, then Laravel finishes the request
+        $this->assertSame(['chunk', 'between', 'chunk', 'end', 'terminate'], $log);
     }
 
     /**
@@ -227,7 +229,7 @@ class OctaneHandlerTest extends TestCase
      *
      * @return string[] The chunks: the status and headers, then the body
      */
-    private function stream(OctaneHandler $handler, string $path, ?callable $onBodyChunk = null): array
+    private function stream(OctaneHandler $handler, string $path, ?callable $onBodyChunk = null, ?callable $onEnd = null): array
     {
         putenv('BREF_RESPONSE_STREAMING=1');
         $chunks = [];
@@ -236,7 +238,7 @@ class OctaneHandlerTest extends TestCase
             if ($onBodyChunk && count($chunks) > 1) {
                 $onBodyChunk($chunk);
             }
-        });
+        }, $onEnd);
 
         return $chunks;
     }
