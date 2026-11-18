@@ -6,6 +6,8 @@ namespace Bref\LaravelBridge\Tests\Queue;
 
 use Aws\CommandInterface;
 use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Queue\MaxAttemptsExceededException;
+use Illuminate\Queue\TimeoutExceededException;
 use Illuminate\Support\Facades\Event;
 
 class QueueHandlerTest extends QueueTestCase
@@ -40,6 +42,29 @@ class QueueHandlerTest extends QueueTestCase
         // The job is not retried: its message is deleted from the queue
         $this->assertNull($result);
         $this->assertSame(['DeleteMessage'], array_map(fn (CommandInterface $command) => $command->getName(), $this->sqsCommands));
+    }
+
+    public function testAJobThatTimesOutFailsWithTheTimeoutException(): void
+    {
+        $failureFile = tempnam(sys_get_temp_dir(), 'bref-timeout-');
+
+        // The timeout exits the process, so the job runs in a child process
+        $pid = pcntl_fork();
+        if ($pid === 0) {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            $this->runJob(new TimingOutJob($failureFile));
+            exit(0);
+        }
+        pcntl_waitpid($pid, $status);
+
+        $this->assertSame(1, pcntl_wexitstatus($status));
+        $expected = class_exists(TimeoutExceededException::class)
+            ? TimeoutExceededException::class
+            : MaxAttemptsExceededException::class;
+        $this->assertSame($expected, file_get_contents($failureFile));
+        unlink($failureFile);
     }
 
     /**

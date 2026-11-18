@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 * Failed jobs are stored again (e.g. in the `failed_jobs` table) when `bref.log_jobs` is `false`.
+* A queued job that ran past its timeout was failed with `MaxAttemptsExceededException` ("has been attempted too many times"), even on its first attempt. Like Laravel's own worker, it is now failed with `TimeoutExceededException` ("has timed out"), which extends it.
 
 ## [v3.1.7]
 ### Security
