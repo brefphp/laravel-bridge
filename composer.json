@@ -16,6 +16,7 @@
         "bref/bref": "^3.0.16",
         "bref/laravel-health-check": "^1",
         "bref/monolog-bridge": "^1.0 || ^2.0",
+        "hollodotme/fast-cgi-client": "^4.0",
         "illuminate/container": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "illuminate/contracts": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "illuminate/http": "^10.0 || ^11.0 || ^12.0 || ^13.0",
