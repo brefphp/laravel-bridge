@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+* Laravel cold starts with PHP-FPM were about 430 ms slower on PHP 8.4.28 and 8.5.13 and up: since these versions, PHP-FPM can no longer reuse the opcache file cache written by `php artisan config:cache`, which Bref runs during the cold start, and compiled the whole framework again on the first request. With PHP-FPM, the configuration is now cached by PHP-FPM itself during the cold start.
 * Failed jobs are stored again (e.g. in the `failed_jobs` table) when `bref.log_jobs` is `false`.
 * A queued job that ran past its timeout was failed with `MaxAttemptsExceededException` ("has been attempted too many times"), even on its first attempt. Like Laravel's own worker, it is now failed with `TimeoutExceededException` ("has timed out"), which extends it.
 
