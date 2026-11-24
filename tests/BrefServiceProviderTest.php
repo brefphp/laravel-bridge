@@ -56,6 +56,26 @@ class BrefServiceProviderTest extends TestCase
         $this->assertSame('/custom/logs/laravel.log', config('logging.channels.emergency.path'));
     }
 
+    public function testItSetsAConnectTimeoutOnDatabaseConnectionsOnLambda(): void
+    {
+        config()->set('database.connections', [
+            'mysql' => ['driver' => 'mysql', 'options' => [\PDO::ATTR_PERSISTENT => true]],
+            'mariadb' => ['driver' => 'mariadb'],
+            'pgsql' => ['driver' => 'pgsql'],
+            'custom' => ['driver' => 'pgsql', 'options' => [\PDO::ATTR_TIMEOUT => 3]],
+            'sqlite' => ['driver' => 'sqlite'],
+        ]);
+
+        (new BrefServiceProvider($this->app))->register();
+
+        $this->assertSame([\PDO::ATTR_PERSISTENT => true, \PDO::ATTR_TIMEOUT => 20], config('database.connections.mysql.options'));
+        $this->assertSame([\PDO::ATTR_TIMEOUT => 20], config('database.connections.mariadb.options'));
+        $this->assertSame([\PDO::ATTR_TIMEOUT => 20], config('database.connections.pgsql.options'));
+        $this->assertSame([\PDO::ATTR_TIMEOUT => 3], config('database.connections.custom.options'));
+        // SQLite uses PDO::ATTR_TIMEOUT for its busy timeout, not for connecting
+        $this->assertSame(['driver' => 'sqlite'], config('database.connections.sqlite'));
+    }
+
     public function testItPreservesNonFileEmergencyLoggingOnLambda(): void
     {
         config()->set('logging.channels.emergency', [
