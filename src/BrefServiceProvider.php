@@ -110,8 +110,10 @@ class BrefServiceProvider extends ServiceProvider
 
         $this->registerUploadRoute();
 
+        $this->storeFailedJobs($dispatcher, $queueFailer);
+
         if (config('bref.log_jobs', true)) {
-            $this->enableDetailedJobLogging($dispatcher, $logManager, $queueFailer);
+            $this->enableDetailedJobLogging($dispatcher, $logManager);
         }
 
         if (file_exists('/proc/1/fd/1')) {
@@ -161,11 +163,29 @@ class BrefServiceProvider extends ServiceProvider
         }
     }
 
-    private function enableDetailedJobLogging(
-        Dispatcher $dispatcher,
-        LogManager $logManager,
-        FailedJobProviderInterface $queueFailer
-    ): void {
+    /**
+     * Laravel stores failed jobs in `queue:work` only, which the SQS handler doesn't use.
+     */
+    private function storeFailedJobs(Dispatcher $dispatcher, FailedJobProviderInterface $queueFailer): void
+    {
+        $dispatcher->listen(function (JobFailed $event) use ($queueFailer) {
+            try {
+                $queueFailer->log(
+                    $event->connectionName,
+                    $event->job->getQueue(),
+                    $event->job->getRawBody(),
+                    $event->exception
+                );
+            } catch (Throwable $e) {
+                // Report the error instead of throwing it: a thrown exception would replace
+                // the job's own exception, which would then never be reported.
+                $this->app->make(ExceptionHandler::class)->report($e);
+            }
+        });
+    }
+
+    private function enableDetailedJobLogging(Dispatcher $dispatcher, LogManager $logManager): void
+    {
         $dispatcher->listen(
             fn (JobProcessing $event) => $logManager->info(
                 "Processing job {$event->job->getJobId()}",
@@ -186,21 +206,6 @@ class BrefServiceProvider extends ServiceProvider
                 ['name' => $event->job->resolveName()]
             )
         );
-
-        $dispatcher->listen(function (JobFailed $event) use ($queueFailer) {
-            try {
-                $queueFailer->log(
-                    $event->connectionName,
-                    $event->job->getQueue(),
-                    $event->job->getRawBody(),
-                    $event->exception
-                );
-            } catch (Throwable $e) {
-                // Report the error instead of throwing it: a thrown exception would replace
-                // the job's own exception, which would then never be reported.
-                $this->app->make(ExceptionHandler::class)->report($e);
-            }
-        });
     }
 
     /**

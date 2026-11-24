@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 * `Bref\LaravelBridge\Http\HttpHandler` (the Laravel kernel run without Octane, undocumented): use PHP-FPM or Octane. It could not send streamed responses or files (`response()->stream()`, `response()->download()`).
 
+### Fixed
+* Failed jobs are stored again (e.g. in the `failed_jobs` table) when `bref.log_jobs` is `false`.
+* A queued job that ran past its timeout was failed with `MaxAttemptsExceededException` ("has been attempted too many times"), even on its first attempt. Like Laravel's own worker, it is now failed with `TimeoutExceededException` ("has timed out"), which extends it.
+
 ## [v3.1.7]
 ### Security
 * On a custom domain configured on API Gateway, a client could choose the domain and path of generated URLs with the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers (or `Forwarded`, when the application trusts it), for example to send password reset links to their own site ([GHSA-qmwm-25jf-8mpw](https://github.com/brefphp/laravel-bridge/security/advisories/GHSA-qmwm-25jf-8mpw)). These headers are now ignored on custom domains when Bref's default trusted proxies apply. They are still used on AWS domains, because the CloudFront distribution created by Lift relies on them: anyone who knows the AWS domain of an application can still set them. To protect against that, use `URL::useOrigin()` (`URL::forceRootUrl()` on Laravel 10).
