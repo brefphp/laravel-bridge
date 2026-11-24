@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+* On Lambda, MySQL, MariaDB and PostgreSQL connections give up connecting after 20 seconds (`PDO::ATTR_TIMEOUT`), unless their `options` set `PDO::ATTR_TIMEOUT`. An unreachable database (for example RDS outside the function's VPC) now throws a connection error instead of waiting about 2 minutes and making the Lambda invocation time out. With PostgreSQL, the 20 seconds include the authentication.
+
 ### Removed
 * `Bref\LaravelBridge\Http\HttpHandler` (the Laravel kernel run without Octane, undocumented): use PHP-FPM or Octane. It could not send streamed responses or files (`response()->stream()`, `response()->download()`).
 

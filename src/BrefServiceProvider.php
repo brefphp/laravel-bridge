@@ -40,6 +40,11 @@ class BrefServiceProvider extends ServiceProvider
     public const TRUSTED_PROXIES = ['0.0.0.0/0', '2000:0:0:0:0:0:0:0/3'];
 
     /**
+     * Seconds, for MySQL, MariaDB and Postgres connections that don't set `PDO::ATTR_TIMEOUT` in their `options`.
+     */
+    public const DATABASE_CONNECT_TIMEOUT = 20;
+
+    /**
      * Set up Bref integration.
      *
      * @return void
@@ -250,6 +255,29 @@ class BrefServiceProvider extends ServiceProvider
 
         if (Config::get('logging.channels.emergency.path') === $defaultEmergencyLogPath) {
             Config::set('logging.channels.emergency', Config::get('logging.channels.stderr'));
+        }
+
+        $this->setDatabaseConnectTimeout();
+    }
+
+    /**
+     * Connecting to an unreachable database (e.g. RDS from outside its VPC) waits for about 2 minutes by default:
+     * the Lambda invocation times out without any error. Fail with a connection error instead.
+     */
+    private function setDatabaseConnectTimeout(): void
+    {
+        foreach (Config::get('database.connections', []) as $name => $connection) {
+            if (! in_array($connection['driver'] ?? null, ['mysql', 'mariadb', 'pgsql'], true)) {
+                continue;
+            }
+            if (isset($connection['options'][\PDO::ATTR_TIMEOUT])) {
+                continue;
+            }
+
+            Config::set("database.connections.$name.options", ($connection['options'] ?? []) + [
+                // Postgres also includes the authentication: this stays above the ~15 seconds an Aurora Serverless v2 database takes to resume
+                \PDO::ATTR_TIMEOUT => self::DATABASE_CONNECT_TIMEOUT,
+            ]);
         }
     }
 
