@@ -16,7 +16,9 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OctaneClient implements Client
 {
@@ -32,7 +34,8 @@ class OctaneClient implements Client
     private HttpResponseWriter|null $writer = null;
 
     /**
-     * The exception thrown while writing the response, which Octane only reports.
+     * The exception thrown while writing the response, which Octane only reports, or kept until
+     * Octane finished the request.
      */
     private Throwable|null $responseError = null;
 
@@ -57,10 +60,11 @@ class OctaneClient implements Client
             $this->worker->handle($request, new RequestContext());
         } finally {
             [$this->request, $this->writer] = [null, null];
+            // Always forgotten: the next request must never throw it
+            [$error, $this->responseError] = [$this->responseError, null];
         }
 
         // Rethrow it so that Bref reports the failed invocation too
-        [$error, $this->responseError] = [$this->responseError, null];
         if ($error) {
             throw $error;
         }
@@ -82,8 +86,11 @@ class OctaneClient implements Client
         }
 
         $writer->start($response->getStatusCode(), $response->headers->all());
-        // Like Octane's other clients: printed before the response's content
-        $writer->write((string) $output);
+        // Like Octane's RoadRunner client: printed before the response's content, except for streamed
+        // responses and files (it would corrupt a download)
+        if (! $response instanceof StreamedResponse && ! $response instanceof BinaryFileResponse) {
+            $writer->write((string) $output);
+        }
         $writer->capture(fn () => $response->sendContent());
     }
 
@@ -116,11 +123,18 @@ class OctaneClient implements Client
     {
         try {
             static::send($response->response, $this->request, $this->writer, $response->outputBuffer);
-            // The client gets the response now: Octane's terminate work (defer(), terminating callbacks...) runs after
-            $this->writer->end();
         } catch (Throwable $e) {
             $this->responseError = $e;
             throw $e;
+        }
+
+        try {
+            // The client gets the response now: Octane's terminate work (defer(), terminating callbacks...) runs after
+            $this->writer->end();
+        } catch (Throwable $e) {
+            // E.g. the response is too big. Not thrown here, else Octane would skip its terminate work:
+            // handle() throws it once Octane finished the request
+            $this->responseError = $e;
         }
     }
 

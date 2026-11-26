@@ -39,7 +39,7 @@ class OctaneHandler extends HttpHandler
         );
 
         if (MaintenanceMode::active()) {
-            OctaneClient::send(MaintenanceMode::response($request), $request, $responseWriter);
+            OctaneClient::send(MaintenanceMode::response($request)->prepare($request), $request, $responseWriter);
             return;
         }
 

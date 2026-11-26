@@ -9,6 +9,7 @@ use Bref\Event\Http\HttpResponseWriter;
 use Bref\LaravelBridge\Http\OctaneHandler;
 use Bref\Runtime\ResponseStream;
 use Illuminate\Foundation\Application;
+use Laravel\Octane\Events\RequestReceived;
 use Laravel\Octane\OctaneServiceProvider;
 use Laravel\Octane\Worker;
 use RuntimeException;
@@ -195,6 +196,141 @@ class OctaneHandlerTest extends TestCase
         $result = $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
 
         $this->assertSame('Hello world', $result['body']);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testTheTerminateWorkRunsWhenTheResponseCannotEnd(): void
+    {
+        $log = [];
+        $handler = $this->handlerWithRoutes(function (Application $app) use (&$log) {
+            $app['router']->get('/', function () use (&$log) {
+                app()->terminating(function () use (&$log) {
+                    $log[] = 'terminate';
+                });
+
+                return 'Hello';
+            });
+        });
+
+        try {
+            // E.g. the response is too big
+            $this->stream($handler, '/', null, fn () => throw new RuntimeException('The response cannot end'));
+            $this->fail('The exception must reach Bref, to be reported as an invocation error');
+        } catch (RuntimeException $e) {
+            $this->assertSame('The response cannot end', $e->getMessage());
+        }
+        $this->assertSame(['terminate'], $log);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testAnErrorWhileWritingAResponseIsNotThrownByTheNextRequest(): void
+    {
+        $failing = true;
+        $handler = $this->handlerWithRoutes(function (Application $app) use (&$failing) {
+            // Octane gives this exception to its client, which writes the error page
+            $app['events']->listen(RequestReceived::class, function () use (&$failing) {
+                if ($failing) {
+                    throw new RuntimeException('Failure before the application');
+                }
+            });
+            $app['router']->get('/plain', fn () => 'Plain');
+        });
+        $brokenResponse = new class implements ResponseStream {
+            public function write(string $chunk): bool
+            {
+                throw new RuntimeException('The response cannot be written');
+            }
+
+            public function end(): void
+            {
+            }
+        };
+        $event = $this->event('/plain', 'abc.lambda-url.eu-west-3.on.aws');
+
+        try {
+            $handler->writeResponse($event, Context::fake(), new HttpResponseWriter($brokenResponse, $event, streamed: true));
+            $this->fail('The exception must reach Bref');
+        } catch (RuntimeException $e) {
+            $this->assertSame('The response cannot be written', $e->getMessage());
+        }
+
+        $failing = false;
+        $this->assertSame('Plain', implode('', array_slice($this->stream($handler, '/plain'), 1)));
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testPrintedOutputIsWrittenBeforeTheContentExceptForFiles(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'bref-');
+        file_put_contents($file, 'File content');
+        $handler = $this->handlerWithRoutes(function (Application $app) use ($file) {
+            $app['router']->get('/plain', function () {
+                echo 'Printed';
+
+                return 'Hello';
+            });
+            $app['router']->get('/download', function () use ($file) {
+                echo 'Printed';
+
+                return response()->download($file);
+            });
+        });
+
+        $plain = $handler->handle($this->event('/plain', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
+        $download = $handler->handle($this->event('/download', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
+        unlink($file);
+
+        $this->assertSame('PrintedHello', $plain['body']);
+        // It would corrupt the download
+        $this->assertSame('File content', $download['body']);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testMaintenanceModeAnswersWithoutTheApplication(): void
+    {
+        $_ENV['MAINTENANCE_MODE'] = '1';
+        $_ENV['LAMBDA_TASK_ROOT'] = sys_get_temp_dir();
+        $handler = $this->handlerWithRoutes(function (Application $app) {
+            $app['router']->get('/', fn () => 'Up');
+        });
+        $event = $this->event('/', 'abc.execute-api.eu-west-3.amazonaws.com');
+
+        $html = $handler->handle($event, Context::fake());
+
+        $this->assertSame(503, $html['statusCode']);
+        // The charset is in lower case or upper case, depending on the version of Symfony
+        $this->assertSame('text/html; charset=utf-8', strtolower($html['headers']['Content-Type']));
+        $this->assertStringNotContainsString('Up', $html['body']);
+
+        // The response is prepared for the request: a HEAD request gets no body
+        $event['headers'] = ['accept' => 'application/json'];
+        $event['requestContext']['http']['method'] = 'HEAD';
+
+        $json = $handler->handle($event, Context::fake());
+
+        $this->assertSame(503, $json['statusCode']);
+        $this->assertSame('application/json', $json['headers']['Content-Type']);
+        $this->assertSame('', $json['body']);
     }
 
     /**

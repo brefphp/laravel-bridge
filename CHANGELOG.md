@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 * On Lambda, MySQL, MariaDB and PostgreSQL connections give up connecting after 20 seconds (`PDO::ATTR_TIMEOUT`), unless their `options` set `PDO::ATTR_TIMEOUT`. An unreachable database (for example RDS outside the function's VPC) now throws a connection error instead of waiting about 2 minutes and making the Lambda invocation time out. With PostgreSQL, the 20 seconds include the authentication.
+* Bref 4 is now required (`bref/bref: ^4.0`).
+* Octane: streamed responses and files (`response()->stream()`, `response()->download()`) are sent to the client as Laravel produces them, with Function URLs in `RESPONSE_STREAM` mode and REST APIs in `STREAM` mode. Other invokers get the whole response at once.
+* Octane: the client gets the response before Octane's terminate work runs (`defer()`, terminating callbacks, jobs dispatched with `afterResponse()`).
+* Octane: what the application prints (`echo`, `dump()`) is now written before the content of the response, like with PHP-FPM and Octane's other servers. It was discarded. It is still discarded for streamed responses and files.
+* Octane: an exception thrown after the response started (e.g. in the callback of a streamed response) is now reported as a failed Lambda invocation.
 
 ### Removed
 * `Bref\LaravelBridge\Http\HttpHandler` (the Laravel kernel run without Octane, undocumented): use PHP-FPM or Octane. It could not send streamed responses or files (`response()->stream()`, `response()->download()`).
