@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Octane: streamed responses and files (`response()->stream()`, `response()->download()`) are sent to the client as Laravel produces them, with Function URLs in `RESPONSE_STREAM` mode and REST APIs in `STREAM` mode. Other invokers get the whole response at once.
 * Octane: the client gets the response before Octane's terminate work runs (`defer()`, terminating callbacks, jobs dispatched with `afterResponse()`).
 * Octane: what the application prints (`echo`, `dump()`) is now written before the content of the response, like with PHP-FPM and Octane's other servers. It was discarded. It is still discarded for streamed responses and files.
-* Octane: an exception thrown after the response started (e.g. in the callback of a streamed response) is now reported as a failed Lambda invocation.
+* Octane: an exception thrown after the response started (e.g. in the callback of a streamed response) is now reported as a failed Lambda invocation. When no part of the response was sent (the invoker does not stream the response), the client gets the error page instead.
 
 ### Removed
 * `Bref\LaravelBridge\Http\HttpHandler` (the Laravel kernel run without Octane, undocumented): use PHP-FPM or Octane. It could not send streamed responses or files (`response()->stream()`, `response()->download()`).

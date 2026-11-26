@@ -99,9 +99,14 @@ class OctaneClient implements Client
      */
     public function error(Throwable $exception, Application $app, Request $request, RequestContext $context): void
     {
-        // Too late for an error page: the response has started
+        // The response failed while it was written. A buffered response is forgotten: nothing was sent.
+        // It is too late for an error page when part of the response was sent.
         if ($this->writer?->started()) {
-            return;
+            if (! $this->writer->reset()) {
+                return;
+            }
+            // The client gets the error page: like an exception before the response, Octane reports it
+            $this->responseError = null;
         }
 
         try {
