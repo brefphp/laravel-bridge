@@ -143,6 +143,30 @@ class OctaneHandlerTest extends TestCase
      */
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
+    public function testExceptionsInBufferedResponsesGiveTheErrorPage(): void
+    {
+        $handler = $this->handlerWithRoutes(function (Application $app) {
+            $app['router']->get('/stream', fn () => response()->stream(function () {
+                echo 'Hello';
+                throw new RuntimeException('Failure in the middle');
+            }, 200, ['X-Custom' => 'value']));
+        });
+
+        // API Gateway HTTP API: nothing was sent when the exception is thrown
+        $result = $handler->handle($this->event('/stream', 'abc.execute-api.eu-west-3.amazonaws.com'), Context::fake());
+
+        $this->assertSame(500, $result['statusCode']);
+        $this->assertStringContainsString('Server Error', $result['body']);
+        $this->assertStringNotContainsString('Hello', $result['body']);
+        $this->assertArrayNotHasKey('X-Custom', $result['headers']);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
     public function testExceptionsBeforeTheResponseGiveTheErrorPage(): void
     {
         $handler = $this->handlerWithRoutes(function (Application $app) {
